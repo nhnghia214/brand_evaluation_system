@@ -2,7 +2,7 @@
 # fetcher/search_fetcher.py (FINAL – RESUME + SMART ANCHOR + NO DEAD LOOP)
 # =========================
 import time
-from utils.sleeper import short_sleep
+from crawler.utils.sleeper import short_sleep
 from config import MIN_SOLD_COUNT, MAX_SEARCH_PAGE, ANCHOR_PRODUCT_LIMIT
 from urllib.parse import quote
 

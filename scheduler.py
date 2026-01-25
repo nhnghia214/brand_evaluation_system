@@ -7,7 +7,7 @@ import signal
 import sys
 from datetime import datetime
 
-from db.repositories import (
+from crawler.db.repositories import (
     get_pending_jobs,
     get_brand_category,
     update_job_status,
@@ -30,9 +30,9 @@ from db.repositories import (
     mark_deep_batch_done
 )
 
-from utils.shopee_parser import extract_product_id
-from fetcher.search_fetcher import SearchFetcher
-from fetcher.review_fetcher import ReviewFetcher
+from crawler.utils.shopee_parser import extract_product_id
+from crawler.fetcher.search_fetcher import SearchFetcher
+from crawler.fetcher.review_fetcher import ReviewFetcher
 from config import *
 
 
