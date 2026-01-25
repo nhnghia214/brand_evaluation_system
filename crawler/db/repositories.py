@@ -2,7 +2,7 @@
 # repositories.py (FULL – FIX INT OVERFLOW / DEEP CRAWL SAFE)
 # ======================================================
 
-from db.db_connection import get_connection
+from crawler.db.db_connection import get_connection
 from datetime import datetime
 
 
