@@ -1,17 +1,11 @@
-from datetime import datetime, timedelta
-from core.layer_a.data_freshness import DataFreshnessEvaluator
-from core.dto.brand_data_status import BrandDataStatus
+from core.layer_a.message_mapper import MessageMapper
+from core.dto.evaluation_result import EvaluationResult
 
-evaluator = DataFreshnessEvaluator()
-
-status = BrandDataStatus(
-    brand_id=1,
-    category_id=1,
-    total_reviews=120,
-    latest_review_time=datetime.now() - timedelta(days=10),
-    data_freshness_days=10,
-    last_evaluated_at=datetime.now()
+evaluation = EvaluationResult(
+    coverage_status="ENOUGH",
+    freshness_status="FRESH",
+    recommended_action="READY_FOR_ANALYSIS"
 )
 
-result = evaluator.evaluate(status)
-print(result)
+msg = MessageMapper.map(evaluation, "NO_CRAWL_REQUIRED")
+print(msg)
