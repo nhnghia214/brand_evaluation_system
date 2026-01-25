@@ -17,6 +17,8 @@ Thumbs.db
 
 # Logs
 *.log
+.env
+
 
 # Data / model (tuỳ bạn)
 data/
