@@ -3,7 +3,7 @@
 # analysis/brand_analyzer.py
 
 from datetime import datetime
-from db.db_connection import get_connection
+from crawler.db.db_connection import get_connection
 
 
 def analyze_brand_category(brand_id: int, category_id: int):

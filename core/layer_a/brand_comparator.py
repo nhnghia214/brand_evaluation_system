@@ -1,5 +1,5 @@
 # so sánh các thương hiệu cùng danh mục
-from db.db_connection import get_connection
+from crawler.db.db_connection import get_connection
 import math
 
 

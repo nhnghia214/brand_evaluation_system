@@ -1,5 +1,5 @@
 # trong danh mục A, thương hiệu B đang tốt lên hay xấu đi?
-from db.db_connection import get_connection
+from crawler.db.db_connection import get_connection
 from datetime import datetime, timedelta
 
 
