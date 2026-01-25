@@ -1,17 +1,12 @@
-from core.dto.user_message import UserMessage
-from core.layer_c.brand_presenter import BrandPresenter
+from agent.intent_parser import IntentParser
 
-msg = UserMessage(
-    message_key="READY",
-    severity="SUCCESS",
-    message="ignored"
-)
+tests = [
+    "Đánh giá thương hiệu Dell",
+    "So sánh Dell và Lenovo",
+    "Nên chọn Dell hay HP cho sinh viên CNTT?"
+]
 
-text = BrandPresenter.present(
-    user_message=msg,
-    brand_name="Dell",
-    category_name="Laptop",
-    score=8.6
-)
-
-print(text)
+for t in tests:
+    print(t)
+    print(IntentParser.parse(t))
+    print("-" * 50)

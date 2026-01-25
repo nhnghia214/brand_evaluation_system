@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Đánh giá thương hiệu</title>
+    <style>
+        body {
+            background: #0f172a;
+            color: #e5e7eb;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            width: 800px;
+            margin: 50px auto;
+        }
+        textarea {
+            width: 100%;
+            height: 80px;
+            padding: 10px;
+            font-size: 16px;
+        }
+        button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .box {
+            margin-top: 30px;
+            padding: 20px;
+            background: #020617;
+            border-radius: 6px;
+        }
+        .label {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🤖 AI Đánh giá thương hiệu</h1>
+
+    <form method="post" action="/ask">
+        <textarea name="question" placeholder="Nhập câu hỏi...">{{ question }}</textarea>
+        <br>
+        <button type="submit">Phân tích</button>
+    </form>
+
+    {% if answer %}
+    <div class="box">
+        <div class="label">📊 Phân tích & diễn giải</div>
+        <p>{{ answer }}</p>
+    </div>
+    {% endif %}
+</div>
+</body>
+</html>
