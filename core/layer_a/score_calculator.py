@@ -20,4 +20,4 @@ def calculate(avg_rating: float, positive_rate: float, total_reviews: int) -> fl
 
     return round(score * 10, 2)  # 0–10
 
-print(calculate(4.5, 0.8, 1200))  # kiểm tra output
+
