@@ -46,6 +46,9 @@ def save_product(product, product_id, brand_id, category_id):
 # ======================================================
 
 def save_reviews(reviews, product_id):
+    from datetime import datetime
+    from crawler.db.db_connection import get_connection
+
     product_id = str(product_id)
 
     conn = get_connection()
@@ -53,20 +56,24 @@ def save_reviews(reviews, product_id):
 
     for r in reviews:
         cursor.execute("""
-            IF NOT EXISTS (SELECT 1 FROM Review WHERE ReviewId = ?)
-            INSERT INTO Review (
-                ReviewId,
-                ProductId,
-                Rating,
-                Comment,
-                ReviewTime,
-                CollectedAt
+            IF NOT EXISTS (
+                SELECT 1 FROM Review WHERE ReviewId = ?
             )
-            VALUES (?, ?, ?, ?, ?, ?)
+            BEGIN
+                INSERT INTO Review (
+                    ReviewId,
+                    ProductId,
+                    Rating,
+                    Comment,
+                    ReviewTime,
+                    CollectedAt
+                )
+                VALUES (?, ?, ?, ?, ?, ?)
+            END
         """,
-            r["review_id"],
-            r["review_id"],
-            product_id,
+            r["review_id"],          # IF
+            r["review_id"],          # ReviewId
+            product_id,              # ProductId
             r.get("rating"),
             r.get("comment"),
             r.get("review_time"),
@@ -75,6 +82,7 @@ def save_reviews(reviews, product_id):
 
     conn.commit()
     conn.close()
+
 
 
 # ======================================================

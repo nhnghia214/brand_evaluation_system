@@ -2,11 +2,6 @@
 data_freshness.py
 
 Layer A – Data freshness & coverage evaluation
-
-Responsibility:
-- Evaluate whether brand-category data is fresh and sufficient
-- Decide recommended crawl action
-- Pure decision logic (no crawl, no analysis, no DB write)
 """
 
 from datetime import datetime
@@ -17,25 +12,18 @@ from core.dto.brand_data_status import BrandDataStatus
 
 
 class DataFreshnessEvaluator:
-    # === CONSTANTS (MATCH LEGACY C#) ===
     MIN_REVIEWS = 30
-    FRESHNESS_THRESHOLD_DAYS = 30
+    FRESHNESS_THRESHOLD_DAYS = 5  # Số ngày để coi là "mới" 
 
     def evaluate(
         self,
         status: Optional[BrandDataStatus]
     ) -> EvaluationResult:
-        """
-        Evaluate data freshness and coverage for a brand-category pair.
-
-        :param status: BrandDataStatus or None if no data exists
-        :return: EvaluationResult
-        """
 
         # ===============================
-        # CASE 1: NO DATA
+        # CASE 1: CHƯA CÓ BẤT KỲ DỮ LIỆU NÀO
         # ===============================
-        if status is None:
+        if status is None or status.latest_review_time is None:
             return EvaluationResult(
                 coverage_status="NOT_ENOUGH",
                 freshness_status="STALE",
@@ -43,7 +31,7 @@ class DataFreshnessEvaluator:
             )
 
         # ===============================
-        # CASE 2: COVERAGE
+        # CASE 2: KIỂM TRA COVERAGE
         # ===============================
         coverage_status = (
             "ENOUGH"
@@ -52,12 +40,9 @@ class DataFreshnessEvaluator:
         )
 
         # ===============================
-        # CASE 3: FRESHNESS
+        # CASE 3: KIỂM TRA ĐỘ CŨ
         # ===============================
-        if status.latest_review_time is None:
-            days_old = float("inf")
-        else:
-            days_old = (datetime.now() - status.latest_review_time).days
+        days_old = (datetime.now() - status.latest_review_time).days
 
         freshness_status = (
             "FRESH"
@@ -66,17 +51,19 @@ class DataFreshnessEvaluator:
         )
 
         # ===============================
-        # CASE 4: DECISION
+        # CASE 4: QUYẾT ĐỊNH
         # ===============================
-        if coverage_status == "ENOUGH" and freshness_status == "FRESH":
-            recommended_action = "READY_FOR_ANALYSIS"
-        elif coverage_status == "ENOUGH" and freshness_status == "STALE":
-            recommended_action = "NEED_INCREMENTAL_CRAWL"
-        else:
-            recommended_action = "NEED_FULL_CRAWL"
+        if freshness_status == "STALE":
+            # ❗ DỮ LIỆU CŨ → BẮT BUỘC CRAWL LẠI
+            return EvaluationResult(
+                coverage_status=coverage_status,
+                freshness_status="STALE",
+                recommended_action="NEED_INCREMENTAL_CRAWL"
+            )
 
+        # Dữ liệu mới → cho phép phân tích
         return EvaluationResult(
             coverage_status=coverage_status,
-            freshness_status=freshness_status,
-            recommended_action=recommended_action
+            freshness_status="FRESH",
+            recommended_action="READY_FOR_ANALYSIS"
         )

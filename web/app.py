@@ -1,19 +1,26 @@
 # web/app.py
+
+import sys
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parents[1]
+sys.path.append(str(BASE_DIR))
+
+from fastapi import FastAPI
+import threading
+
 from web.ui import router as ui_router
 
-from fastapi import FastAPI, HTTPException
-
+from crawler.service import CrawlService
 from crawler.db.db_connection import get_connection
 
 from core.layer_a.brand_category_resolver import BrandCategoryResolver
 from core.layer_a.data_freshness import DataFreshnessEvaluator
 from core.layer_a.crawl_job_orchestrator import CrawlJobOrchestrator
-from core.layer_a.score_calculator import calculate
+from core.layer_b.analysis_service import AnalysisService
 from core.layer_a.message_mapper import MessageMapper
 
-from core.layer_c.brand_presenter import BrandPresenter
 from core.dto.brand_data_status import BrandDataStatus
-from core.dto.user_message import UserMessage
 from web.schemas import EvaluateRequest, EvaluateResponse
 from core.layer_c.brand_narrator import narrate_brand_evaluation
 
@@ -22,17 +29,35 @@ app = FastAPI(title="Brand Evaluation API")
 app.include_router(ui_router)
 
 
+# ==================================================
+# 🔥 BACKGROUND SERVICES
+# ==================================================
+@app.on_event("startup")
+def start_background_services():
+    # Crawl service
+    crawler = CrawlService()
+    threading.Thread(target=crawler.run, daemon=True).start()
+
+    # 🔥 Analysis service 
+    analysis = AnalysisService()
+    threading.Thread(target=analysis.run, daemon=True).start()
+
+
+
+# ==================================================
+# 🔥 API: EVALUATE BRAND
+# ==================================================
 @app.post("/evaluate", response_model=EvaluateResponse)
 def evaluate_brand(req: EvaluateRequest):
     resolver = BrandCategoryResolver()
     freshness_evaluator = DataFreshnessEvaluator()
     crawl_orchestrator = CrawlJobOrchestrator()
+    analysis_service = AnalysisService()
 
     # ===============================
     # STEP 1: Resolve brand/category
     # ===============================
     resolve_result = resolver.resolve(req.brand, req.category)
-
     if resolve_result.status != "VALID":
         return EvaluateResponse(
             brand=req.brand,
@@ -45,12 +70,23 @@ def evaluate_brand(req: EvaluateRequest):
     brand_id = resolve_result.brand_id
     category_id = resolve_result.category_id
 
+    # ==================================================
+    # 🔥🔥🔥 STEP 2: FORCE SNAPSHOT REBUILD (KEY FIX)
+    # ==================================================
+    # 👉 BẤT KỂ job trạng thái gì
+    # 👉 BẤT KỂ review có trùng hay không
+    # 👉 Snapshot luôn được rebuild từ Review table
+    print(
+        f"[System] Rebuilding analysis snapshot "
+        f"(brand={brand_id}, category={category_id})"
+    )
+    analysis_service._analyze_single(brand_id, category_id)
+
     # ===============================
-    # STEP 2: Load BrandDataStatus
+    # STEP 3: Reload BrandDataStatus (AFTER SNAPSHOT)
     # ===============================
     conn = get_connection()
     cursor = conn.cursor()
-
     cursor.execute("""
         SELECT
             BrandId,
@@ -62,7 +98,6 @@ def evaluate_brand(req: EvaluateRequest):
         FROM BrandDataStatus
         WHERE BrandId = ? AND CategoryId = ?
     """, (brand_id, category_id))
-
     row = cursor.fetchone()
     conn.close()
 
@@ -78,12 +113,12 @@ def evaluate_brand(req: EvaluateRequest):
         )
 
     # ===============================
-    # STEP 3: Evaluate freshness
+    # STEP 4: Evaluate freshness (POST-SNAPSHOT)
     # ===============================
     evaluation = freshness_evaluator.evaluate(status_obj)
 
     # ===============================
-    # STEP 4: Handle crawl decision
+    # STEP 5: Crawl decision (FUTURE DATA)
     # ===============================
     job_status = crawl_orchestrator.handle_decision(
         brand_id=brand_id,
@@ -92,47 +127,44 @@ def evaluate_brand(req: EvaluateRequest):
     )
 
     # ===============================
-    # STEP 5: Load analysis result
+    # STEP 6: Load analysis result
     # ===============================
     conn = get_connection()
     cursor = conn.cursor()
-
     cursor.execute("""
-        SELECT AvgRating, PositiveRate, NegativeRate
+        SELECT
+            AvgRating,
+            PositiveRate,
+            NegativeRate,
+            GeneratedAt
         FROM BrandAnalysisResult
         WHERE BrandId = ? AND CategoryId = ?
     """, (brand_id, category_id))
-
     analysis_row = cursor.fetchone()
     conn.close()
 
-    score = None
     if analysis_row:
-        score = calculate(
+        score = analysis_row.AvgRating
+        message_text = narrate_brand_evaluation(
+            brand=req.brand,
+            category=req.category,
+            score=score,
             avg_rating=analysis_row.AvgRating,
             positive_rate=analysis_row.PositiveRate,
+            negative_rate=analysis_row.NegativeRate,
             total_reviews=status_obj.total_reviews if status_obj else 0
         )
-
-    # ===============================
-    # STEP 6: Message mapping + present
-    # ===============================
-    user_message = MessageMapper.map(evaluation, job_status)
-
-    message_text = narrate_brand_evaluation(
-        brand=req.brand,
-        category=req.category,
-        score=score if score is not None else 0,
-        avg_rating=analysis_row.AvgRating if analysis_row else 0,
-        positive_rate=analysis_row.PositiveRate if analysis_row else 0,
-        negative_rate=analysis_row.NegativeRate if analysis_row else 0,
-        total_reviews=status_obj.total_reviews if status_obj else 0
-    )
+        status = "READY"
+    else:
+        user_message = MessageMapper.map(evaluation, job_status)
+        score = None
+        message_text = user_message.message
+        status = user_message.severity
 
     return EvaluateResponse(
         brand=req.brand,
         category=req.category,
         score=score,
         message=message_text,
-        status=user_message.severity
+        status=status
     )

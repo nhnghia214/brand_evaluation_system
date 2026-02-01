@@ -1,5 +1,3 @@
-# agent/prompts.py
-
 INTENT_PROMPT = """
 Bạn là hệ thống phân tích câu hỏi người dùng về đánh giá và so sánh thương hiệu.
 
@@ -14,6 +12,10 @@ Các intent hợp lệ:
 - COMPARE_BRANDS
 
 Yêu cầu:
+- Chỉ trích xuất thông tin CÓ TRONG câu hỏi
+- KHÔNG tự suy diễn
+- KHÔNG mặc định thương hiệu hay danh mục
+- Nếu không xác định được trường nào, trả null
 - Chỉ trả về JSON hợp lệ
 - Không giải thích
 - Không markdown
@@ -23,16 +25,16 @@ Cấu trúc JSON:
 Nếu intent = EVALUATE_BRAND:
 {{
   "intent": "EVALUATE_BRAND",
-  "brand": "Dell",
-  "category": "Laptop"
+  "brand": null,
+  "category": null
 }}
 
 Nếu intent = COMPARE_BRANDS:
 {{
   "intent": "COMPARE_BRANDS",
-  "brands": ["Dell", "Lenovo"],
-  "category": "Laptop",
-  "criteria": "độ bền"
+  "brands": [],
+  "category": null,
+  "criteria": null
 }}
 
 Câu hỏi người dùng:

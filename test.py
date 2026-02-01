@@ -1,12 +1,22 @@
-from agent.intent_parser import IntentParser
+from crawler.db.db_connection import get_connection
+from core.layer_b.analysis_service import AnalysisService
 
-tests = [
-    "Đánh giá thương hiệu Dell",
-    "So sánh Dell và Lenovo",
-    "Nên chọn Dell hay HP cho sinh viên CNTT?"
-]
+analysis = AnalysisService()
 
-for t in tests:
-    print(t)
-    print(IntentParser.parse(t))
-    print("-" * 50)
+conn = get_connection()
+cursor = conn.cursor()
+
+cursor.execute("""
+    SELECT DISTINCT BrandId, CategoryId
+    FROM BrandAnalysisResult
+""")
+
+pairs = cursor.fetchall()
+conn.close()
+
+print(f"Rebuilding score for {len(pairs)} brand-category pairs")
+
+for row in pairs:
+    analysis._analyze_by_id(row.BrandId, row.CategoryId)
+
+print("DONE")
