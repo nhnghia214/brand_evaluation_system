@@ -2,16 +2,9 @@
 crawl_job_orchestrator.py
 
 Layer A – Crawl job orchestration
-
-Responsibility:
-- Handle crawl job creation based on evaluation result
-- Guard against duplicate running jobs
-- Persist crawl job decision to DB
 """
 
 from datetime import datetime
-from typing import Optional
-
 from crawler.db.db_connection import get_connection
 
 
@@ -22,14 +15,9 @@ class CrawlJobOrchestrator:
         category_id: int,
         recommended_action: str
     ) -> str:
-        """
-        Handle crawl decision based on recommended action.
-
-        :return: Job status string
-        """
 
         # ===============================
-        # CASE 1: NO CRAWL REQUIRED
+        # CASE 1: KHÔNG CẦN CRAWL
         # ===============================
         if recommended_action == "READY_FOR_ANALYSIS":
             return "NO_CRAWL_REQUIRED"
@@ -38,28 +26,25 @@ class CrawlJobOrchestrator:
         cursor = conn.cursor()
 
         # ===============================
-        # CASE 2: JOB ALREADY EXISTS
+        # CASE 2: ĐÃ CÓ JOB ĐANG HOẠT ĐỘNG
         # ===============================
-        cursor.execute(
-            """
+        cursor.execute("""
             SELECT TOP 1 JobId
             FROM CrawlJob
             WHERE BrandId = ?
               AND CategoryId = ?
               AND JobStatus IN ('PENDING', 'RUNNING', 'PAUSED')
-            """,
-            (brand_id, category_id)
-        )
+        """, (brand_id, category_id))
 
-        existing_job = cursor.fetchone()
-        if existing_job:
+        row = cursor.fetchone()
+        if row:
+            conn.close()
             return "JOB_ALREADY_EXISTS"
 
         # ===============================
-        # CASE 3: CREATE NEW JOB
+        # CASE 3: CHỈ CÒN JOB COMPLETED → TẠO JOB MỚI
         # ===============================
-        cursor.execute(
-            """
+        cursor.execute("""
             INSERT INTO CrawlJob (
                 BrandId,
                 CategoryId,
@@ -67,9 +52,8 @@ class CrawlJobOrchestrator:
                 CreatedAt
             )
             VALUES (?, ?, 'PENDING', ?)
-            """,
-            (brand_id, category_id, datetime.now())
-        )
+        """, (brand_id, category_id, datetime.now()))
 
         conn.commit()
-        return "JOB_CREATED"
+        conn.close()
+        return "JOB_RECREATED"

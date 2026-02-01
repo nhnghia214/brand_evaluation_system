@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>AI Đánh giá thương hiệu</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
         body {
             background: #0f172a;
@@ -10,7 +12,7 @@
             font-family: Arial, sans-serif;
         }
         .container {
-            width: 800px;
+            width: 900px;
             margin: 50px auto;
         }
         textarea {
@@ -33,12 +35,12 @@
             background: #020617;
             border-radius: 6px;
         }
-        .label {
-            font-weight: bold;
+        h1, h3 {
             margin-bottom: 10px;
         }
     </style>
 </head>
+
 <body>
 <div class="container">
     <h1>🤖 AI Đánh giá thương hiệu</h1>
@@ -49,12 +51,57 @@
         <button type="submit">Phân tích</button>
     </form>
 
+    {% if chart_data %}
+    <div class="box">
+        <h3>📊 So sánh tổng hợp</h3>
+        <canvas id="compareChart"></canvas>
+    </div>
+    {% endif %}
+
     {% if answer %}
     <div class="box">
-        <div class="label">📊 Phân tích & diễn giải</div>
-        <p>{{ answer }}</p>
+        <h3>🧠 Kết luận & tư vấn</h3>
+        <p style="white-space: pre-line;">{{ answer }}</p>
+    </div>
+    {% endif %}
+
+    {% if debug_intent %}
+    <div class="box">
+        <h3>🧩 Intent Parser Output</h3>
+        <pre style="color:#93c5fd;">{{ debug_intent }}</pre>
     </div>
     {% endif %}
 </div>
+
+{% if chart_data %}
+<script>
+const labels = {{ chart_data.labels | tojson }};
+const scores = {{ chart_data.scores | tojson }};
+const totalReviews = {{ chart_data.total_reviews | tojson }};
+
+new Chart(document.getElementById('compareChart'), {
+    type: 'bar',
+    data: {
+        labels: labels,
+        datasets: [
+            {
+                label: 'Score',
+                data: scores
+            },
+            {
+                label: 'Total Reviews',
+                data: totalReviews
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: { beginAtZero: true }
+        }
+    }
+});
+</script>
+{% endif %}
 </body>
 </html>
