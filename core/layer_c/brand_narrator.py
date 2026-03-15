@@ -41,21 +41,27 @@ def narrate_brand_evaluation(
             f"thuộc thương hiệu này là {avg_rating:.2f}/5."
         )
 
-    if positive_rate is not None:
+    if positive_rate is not None and negative_rate is not None:
+        pos_pct = positive_rate * 100
+        neg_pct = negative_rate * 100
+        
         if positive_rate >= 0.8:
             parts.append(
-                f"Đáng chú ý, phần lớn người dùng có trải nghiệm tích cực, "
-                f"với khoảng {positive_rate*100:.1f}% đánh giá ở mức 4–5 sao."
+                f"Xét trên góc độ ngôn từ đánh giá, khoảng {pos_pct:.1f}% nội dung "
+                f"thể hiện cảm xúc tích cực, trong khi chỉ {neg_pct:.1f}% mang sắc thái tiêu cực. "
+                f"Điều này cho thấy người dùng có xu hướng đánh giá rất tốt về thương hiệu."
             )
         elif positive_rate >= 0.6:
             parts.append(
-                f"Tỷ lệ đánh giá tích cực đạt khoảng {positive_rate*100:.1f}%, "
-                f"cho thấy mức độ hài lòng nhìn chung khá ổn định."
+                f"Về mặt cảm xúc trong đánh giá, tỷ lệ ngôn từ tích cực chiếm khoảng {pos_pct:.1f}%, "
+                f"cao hơn đáng kể so với {neg_pct:.1f}% ngôn từ tiêu cực. "
+                f"Nhìn chung, trải nghiệm người dùng ở mức khá tích cực."
             )
         else:
             parts.append(
-                f"Tuy nhiên, tỷ lệ đánh giá tích cực chỉ đạt {positive_rate*100:.1f}%, "
-                f"phản ánh trải nghiệm người dùng chưa thực sự đồng đều."
+                f"Tuy nhiên, phân tích ngôn từ cho thấy chỉ khoảng {pos_pct:.1f}% đánh giá mang sắc thái tích cực, "
+                f"trong khi tỷ lệ tiêu cực lên tới {neg_pct:.1f}%. "
+                f"Điều này phản ánh sự phân hóa rõ rệt trong trải nghiệm người dùng."
             )
 
     # 4️⃣ ĐỘ TIN CẬY DỮ LIỆU

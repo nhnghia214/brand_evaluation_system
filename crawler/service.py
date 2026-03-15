@@ -92,7 +92,8 @@ class CrawlService:
         cursor.execute("""
             SELECT TOP 1 JobId, BrandId, CategoryId, JobStatus
             FROM CrawlJob
-            WHERE JobStatus IN ('PENDING', 'PAUSED')
+            WHERE JobStatus IN ('PENDING')
+                OR (JobStatus = 'PAUSED' AND PausedUntil <= GETDATE())
             ORDER BY CreatedAt ASC
         """)
         row = cursor.fetchone()
@@ -113,13 +114,15 @@ class CrawlService:
         conn.commit()
         conn.close()
 
-    def _mark_paused(self, job_id):
+    def _mark_paused(self, job_id, minutes=90):
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute("""
             UPDATE CrawlJob
-            SET JobStatus = 'PAUSED'
+            SET JobStatus = 'PAUSED',
+                PausedUntil = DATEADD(MINUTE, ?, GETDATE())
             WHERE JobId = ?
-        """, (job_id,))
+        """, (minutes, job_id))
         conn.commit()
         conn.close()
+

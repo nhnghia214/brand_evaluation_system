@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AI Brand Evaluator{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        space: { 900: '#0B0F19', 800: '#111827', 700: '#1F2937' },
+                        brand: { neon: '#8B5CF6', light: '#C4B5FD' }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-space-900 text-white font-sans antialiased selection:bg-brand-neon selection:text-white flex flex-col min-h-screen">
+
+    {% block header %}
+    <header class="border-b border-space-700/50 backdrop-blur-md sticky top-0 w-full z-50 bg-space-900/80">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <a href="/" class="text-xl font-bold tracking-tighter flex items-center gap-2">
+                <span class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg text-sm">AI</span>
+                BrandAgent
+            </a>
+            
+            <nav class="flex gap-4 items-center">
+                {% if user %}
+                    <span class="text-sm font-medium text-brand-light hidden md:block">Xin chào, {{ user.name }}</span>
+                    {% if user.role == 'admin' %}
+                        <a href="/admin" class="text-sm text-gray-400 hover:text-white transition px-3 py-2 border-l border-space-700">Admin Panel</a>
+                    {% else %}
+                        <a href="/dashboard" class="text-sm text-gray-400 hover:text-white transition px-3 py-2 border-l border-space-700">Dashboard</a>
+                    {% endif %}
+                    <a href="/auth/logout" class="bg-red-500/10 hover:bg-red-500/20 text-red-400 px-5 py-2 rounded-full text-sm font-medium transition backdrop-blur-sm border border-red-500/10 ml-2">
+                        Logout
+                    </a>
+                {% else %}
+                    {% endif %}
+            </nav>
+        </div>
+    </header>
+    {% endblock %}
+
+    <main class="flex-1 flex flex-col">
+        {% block content %}{% endblock %}
+    </main>
+
+</body>
+</html>

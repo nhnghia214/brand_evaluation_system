@@ -36,6 +36,11 @@ class AnalysisService:
                     self._analyze_by_id(brand_id, category_id)
                 except Exception as e:
                     print("[Analysis] Error:", e)
+    # ===============================
+    # ALIAS FOR BACKWARD COMPATIBILITY
+    # ===============================
+    def _analyze_single(self, brand_id: int, category_id: int):
+        return self._analyze_by_id(brand_id, category_id)
 
     # ===============================
     # FIND TASKS NEED ANALYSIS
@@ -74,35 +79,107 @@ class AnalysisService:
         cursor = conn.cursor()
 
         # ==================================================
-        # 1️⃣ LOAD REVIEW TEXT
+        # 1️⃣ LOAD OLD DATA & NEW REVIEW TEXT (INCREMENTAL UPDATE)
         # ==================================================
+        # Lấy Trạng thái cũ (Điểm cũ và Tổng số review cũ)
         cursor.execute("""
-            SELECT r.Comment
-            FROM Review r
-            JOIN Product p ON r.ProductId = p.ProductId
-            WHERE p.BrandId = ? AND p.CategoryId = ?
-            AND r.Comment IS NOT NULL
+            SELECT b.PositiveRate, s.TotalReviews, s.LastEvaluatedAt
+            FROM BrandAnalysisResult b
+            JOIN BrandDataStatus s ON b.BrandId = s.BrandId AND b.CategoryId = s.CategoryId
+            WHERE b.BrandId = ? AND b.CategoryId = ?
         """, (brand_id, category_id))
+        old_data = cursor.fetchone()
 
-        review_texts = [r.Comment for r in cursor.fetchall()]
+        old_positive_rate = old_data.PositiveRate if old_data else 0.0
+        old_total_evaluated = old_data.TotalReviews if old_data else 0
+        last_evaluated_at = old_data.LastEvaluatedAt if old_data else None
 
-        if not review_texts:
+        # Chỉ lấy NHỮNG BÌNH LUẬN MỚI chưa từng được phân tích
+        if last_evaluated_at:
+            cursor.execute("""
+                SELECT r.Comment FROM Review r
+                JOIN Product p ON r.ProductId = p.ProductId
+                WHERE p.BrandId = ? AND p.CategoryId = ?
+                AND r.Comment IS NOT NULL
+                AND r.CollectedAt > ? 
+            """, (brand_id, category_id, last_evaluated_at))
+            print(f"  -> [Incremental] Đã có dữ liệu cũ. Lấy các review mới sau ngày {last_evaluated_at}")
+        else:
+            cursor.execute("""
+                SELECT r.Comment FROM Review r
+                JOIN Product p ON r.ProductId = p.ProductId
+                WHERE p.BrandId = ? AND p.CategoryId = ?
+                AND r.Comment IS NOT NULL
+            """, (brand_id, category_id))
+            print("  -> [First Run] Phân tích lần đầu toàn bộ review.")
+
+        new_reviews = [r.Comment for r in cursor.fetchall()]
+
+        if not new_reviews:
+            print("  -> Không có bình luận mới nào cần phân tích. Bỏ qua.")
             conn.close()
             return
 
         # ==================================================
-        # 2️⃣ SENTIMENT TOKEN ANALYSIS
+        # 2️⃣ SENTIMENT TOKEN ANALYSIS (MULTI-AGENT CHO DATA MỚI)
         # ==================================================
-        analyzer = SentimentTokenAnalyzer()
-        positive_tokens, negative_tokens = analyzer.analyze_reviews(review_texts)
+        from core.layer_b.sentiment_token_analyzer import SentimentTokenAnalyzer
+        from core.layer_b.sentiment_agents.gpt_agent import GPTSentimentAgent
+        from core.layer_b.sentiment_agents.locked_groq_agent import LockedGroqAgent
+        from core.layer_b.sentiment_agents.llama_agent import LlamaSentimentAgent
+        from core.layer_b.sentiment_agents.aggregator import WeightedSentimentAggregator
 
-        if positive_tokens + negative_tokens == 0:
-            sentiment_ratio = 0.5
+        vader_analyzer = SentimentTokenAnalyzer()
+        agents = [GPTSentimentAgent(), LockedGroqAgent(), LlamaSentimentAgent()]
+        weights = [0.25, 0.25, 0.25, 0.25]
+        aggregator = WeightedSentimentAggregator(agents, weights)
+
+        new_positive_count = 0 
+        new_valid_comments = 0
+
+        print(f"  -> Đang dùng Multi-Agent phân tích {len(new_reviews)} bình luận MỚI...")
+
+        for text in new_reviews:
+            if not text:
+                continue
+            
+            # 1. VADER
+            pos, neg = vader_analyzer.analyze_reviews([text])
+            vader_ratio = 0.5 if (pos + neg) == 0 else pos / (pos + neg)
+            vader_score_minus1_to_1 = (vader_ratio * 2) - 1
+
+            # 2. LLMs Multi-Agent
+            try:
+                score_ratio = aggregator.aggregate(text, vader_score_minus1_to_1)
+            except Exception as e:
+                print(f"[Analysis] Lỗi Agent, bỏ qua: {e}")
+                score_ratio = 0.5 
+
+            if score_ratio >= 0.6:
+                new_positive_count += 1
+                
+            new_valid_comments += 1
+            print(f"    + Đã xử lý {new_valid_comments}/{len(new_reviews)}")
+            time.sleep(2) # Chống Rate Limit
+
+        # ==================================================
+        # TÍNH TOÁN CÔNG THỨC HÒA TRỘN (INCREMENTAL MATH)
+        # ==================================================
+        if old_total_evaluated == 0:
+            # Nếu là lần chạy đầu tiên
+            sentiment_ratio = new_positive_count / new_valid_comments if new_valid_comments > 0 else 0.5
         else:
-            sentiment_ratio = positive_tokens / (positive_tokens + negative_tokens)
+            # THUẬT TOÁN HÒA TRỘN ĐIỂM SỐ
+            old_positive_count = old_positive_rate * old_total_evaluated
+            final_positive_count = old_positive_count + new_positive_count
+            final_total_comments = old_total_evaluated + new_valid_comments
+            
+            sentiment_ratio = final_positive_count / final_total_comments
 
         positive_rate = sentiment_ratio
         negative_rate = 1 - sentiment_ratio
+        
+        print(f"  -> [Toán học] Trộn điểm: Cũ({old_total_evaluated}) + Mới({new_valid_comments}) -> Tỷ lệ mới: {positive_rate:.4f}")
 
         # ==================================================
         # 3️⃣ AGGREGATE NUMERIC METRICS

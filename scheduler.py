@@ -86,7 +86,6 @@ class CrawlWorker:
                 # ===== SEARCH DONE =====
                 if "_search_done" in item:
                     reset_search_crawl(job_id)
-                    update_job_status(job_id, "COMPLETED")
                     return
 
                 # ===== STOP / TIMEOUT =====
@@ -134,7 +133,7 @@ class CrawlWorker:
                     else:
                         soft_block_count = 0
 
-                    if soft_block_count >= 3:
+                    if soft_block_count >= 10:
                         update_job_status(job_id, "PAUSED")
                         raise CaptchaError("Review captcha detected")
 
@@ -177,7 +176,7 @@ class CrawlWorker:
                 else:
                     soft_block_count = 0
 
-                if soft_block_count >= 3:
+                if soft_block_count >= 5:
                     update_job_status(job_id, "PAUSED")
                     raise CaptchaError("Deep review captcha detected")
 

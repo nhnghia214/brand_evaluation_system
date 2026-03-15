@@ -7,6 +7,7 @@ BASE_DIR = Path(__file__).resolve().parents[1]
 sys.path.append(str(BASE_DIR))
 
 from fastapi import FastAPI
+from starlette.middleware.sessions import SessionMiddleware
 import threading
 
 from web.ui import router as ui_router
@@ -26,6 +27,8 @@ from core.layer_c.brand_narrator import narrate_brand_evaluation
 
 
 app = FastAPI(title="Brand Evaluation API")
+app.add_middleware(SessionMiddleware, secret_key="luan_van_ai_brand_evaluator_secret")
+
 app.include_router(ui_router)
 
 
@@ -168,3 +171,4 @@ def evaluate_brand(req: EvaluateRequest):
         message=message_text,
         status=status
     )
+
