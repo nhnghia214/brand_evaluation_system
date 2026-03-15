@@ -65,3 +65,40 @@ class BrandCategoryRegistrar:
 
         conn.close()
         return int(category_id)
+    
+    def get_or_create_brand_with_flag(self, brand_name: str) -> tuple[int, bool]:
+        """
+        Return:
+        - brand_id
+        - is_new (True nếu brand vừa được INSERT)
+        """
+
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            "SELECT BrandId FROM Brand WHERE BrandName = ?",
+            (brand_name,)
+        )
+        row = cursor.fetchone()
+
+        if row:
+            conn.close()
+            return row.BrandId, False
+
+        # ✅ INSERT + lấy ID an toàn
+        cursor.execute(
+            """
+            INSERT INTO Brand (BrandName, CreatedAt)
+            OUTPUT INSERTED.BrandId
+            VALUES (?, ?)
+            """,
+            (brand_name, datetime.now())
+        )
+
+        brand_id = cursor.fetchone()[0]
+        conn.commit()
+        conn.close()
+
+        return int(brand_id), True
+
