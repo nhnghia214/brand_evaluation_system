@@ -65,6 +65,7 @@ class CrawlWorker:
                 if "_page_done" in item:
                     page_idx = item["page_index"]
 
+                    # Nếu trang báo "exhausted" mà không tìm thấy item nào (sự cố mạng/captcha)
                     if item.get("items_found", 0) == 0:
                         search_soft_block_count += 1
                     else:
@@ -86,6 +87,7 @@ class CrawlWorker:
                 # ===== SEARCH DONE =====
                 if "_search_done" in item:
                     reset_search_crawl(job_id)
+                    update_job_status(job_id, "COMPLETED")
                     return
 
                 # ===== STOP / TIMEOUT =====
@@ -123,7 +125,7 @@ class CrawlWorker:
                         start_offset=state.get("review_offset", 0),
                         last_review_time=state.get("last_review_time"),
                         max_reviews=SAFE_MAX_REVIEWS,
-                        max_review_pages=1
+                        max_review_pages=35
                     )
 
                     reviews = result["reviews"] or []
@@ -165,7 +167,7 @@ class CrawlWorker:
                     product=item,
                     start_offset=state.get("review_offset", 0),
                     last_review_time=batch["LastReviewTime"],
-                    max_reviews=9999,
+                    max_reviews=ANCHOR_MAX_REVIEWS,
                     max_review_pages=batch["PageEnd"] - batch["PageStart"] + 1
                 )
 
@@ -196,9 +198,9 @@ class CrawlWorker:
 
                 product_count += 1
                 time.sleep(uniform(*DELAY_BETWEEN_PRODUCT))
-
-            reset_search_crawl(job_id)
-            update_job_status(job_id, "COMPLETED")
+                
+                # ĐÃ SỬA TẠI ĐÂY: Dùng continue để vòng lặp đi tiếp sang sản phẩm khác
+                continue
 
         except CaptchaError:
             raise

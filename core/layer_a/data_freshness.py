@@ -9,12 +9,12 @@ from typing import Optional
 
 from core.dto.evaluation_result import EvaluationResult
 from core.dto.brand_data_status import BrandDataStatus
+from config import MAX_REVIEW_STALE_DAYS  # 30 ngày sẽ kích hoạt crawl lại (incremental)
 
 
 class DataFreshnessEvaluator:
     MIN_REVIEWS = 30
-    FRESHNESS_THRESHOLD_DAYS = 5  # Số ngày để coi là "mới" 
-
+    
     def evaluate(
         self,
         status: Optional[BrandDataStatus]
@@ -23,7 +23,7 @@ class DataFreshnessEvaluator:
         # ===============================
         # CASE 1: CHƯA CÓ BẤT KỲ DỮ LIỆU NÀO
         # ===============================
-        if status is None or status.latest_review_time is None:
+        if status is None:
             return EvaluationResult(
                 coverage_status="NOT_ENOUGH",
                 freshness_status="STALE",
@@ -40,28 +40,33 @@ class DataFreshnessEvaluator:
         )
 
         # ===============================
-        # CASE 3: KIỂM TRA ĐỘ CŨ
+        # CASE 3: KIỂM TRA ĐỘ CŨ (SỬA LẠI THEO 30 NGÀY)
         # ===============================
-        days_old = (datetime.now() - status.latest_review_time).days
-
-        freshness_status = (
-            "FRESH"
-            if days_old <= self.FRESHNESS_THRESHOLD_DAYS
-            else "STALE"
-        )
+        # Dùng last_evaluated_at (tương đương GeneratedAt) để xem lần cuối chấm điểm là khi nào
+        last_eval = getattr(status, 'last_evaluated_at', None) 
+        
+        if not last_eval:
+            freshness_status = "STALE"
+        else:
+            days_old = (datetime.now() - last_eval).days
+            freshness_status = (
+                "FRESH"
+                if days_old <= MAX_REVIEW_STALE_DAYS  # 30 ngày
+                else "STALE"
+            )
 
         # ===============================
         # CASE 4: QUYẾT ĐỊNH
         # ===============================
         if freshness_status == "STALE":
-            # ❗ DỮ LIỆU CŨ → BẮT BUỘC CRAWL LẠI
+            # ❗ DỮ LIỆU CŨ QUÁ 30 NGÀY → BẮT BUỘC KÍCH HOẠT CRAWL LẠI
             return EvaluationResult(
                 coverage_status=coverage_status,
                 freshness_status="STALE",
                 recommended_action="NEED_INCREMENTAL_CRAWL"
             )
 
-        # Dữ liệu mới → cho phép phân tích
+        # Dữ liệu mới (dưới 30 ngày) → cho phép dùng luôn để hiển thị
         return EvaluationResult(
             coverage_status=coverage_status,
             freshness_status="FRESH",

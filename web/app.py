@@ -55,7 +55,6 @@ def evaluate_brand(req: EvaluateRequest):
     resolver = BrandCategoryResolver()
     freshness_evaluator = DataFreshnessEvaluator()
     crawl_orchestrator = CrawlJobOrchestrator()
-    analysis_service = AnalysisService()
 
     # ===============================
     # STEP 1: Resolve brand/category
@@ -73,20 +72,10 @@ def evaluate_brand(req: EvaluateRequest):
     brand_id = resolve_result.brand_id
     category_id = resolve_result.category_id
 
-    # ==================================================
-    # 🔥🔥🔥 STEP 2: FORCE SNAPSHOT REBUILD (KEY FIX)
-    # ==================================================
-    # 👉 BẤT KỂ job trạng thái gì
-    # 👉 BẤT KỂ review có trùng hay không
-    # 👉 Snapshot luôn được rebuild từ Review table
-    print(
-        f"[System] Rebuilding analysis snapshot "
-        f"(brand={brand_id}, category={category_id})"
-    )
-    analysis_service._analyze_single(brand_id, category_id)
+    # LƯU Ý: ĐÃ XÓA LỆNH FORCE SNAPSHOT REBUILD Ở ĐÂY ĐỂ TRÁNH TREO WEB
 
     # ===============================
-    # STEP 3: Reload BrandDataStatus (AFTER SNAPSHOT)
+    # STEP 2: Lấy BrandDataStatus hiện tại từ DB
     # ===============================
     conn = get_connection()
     cursor = conn.cursor()
@@ -116,21 +105,33 @@ def evaluate_brand(req: EvaluateRequest):
         )
 
     # ===============================
-    # STEP 4: Evaluate freshness (POST-SNAPSHOT)
+    # STEP 3: Đánh giá độ mới (Kiểm tra mốc 30 ngày)
     # ===============================
     evaluation = freshness_evaluator.evaluate(status_obj)
 
     # ===============================
-    # STEP 5: Crawl decision (FUTURE DATA)
+    # STEP 4: Quyết định Cào dữ liệu hay Hiển thị
     # ===============================
-    job_status = crawl_orchestrator.handle_decision(
-        brand_id=brand_id,
-        category_id=category_id,
-        recommended_action=evaluation.recommended_action
-    )
-
+    if evaluation.recommended_action in ["NEED_FULL_CRAWL", "NEED_INCREMENTAL_CRAWL"]:
+        # Tình huống: Chưa có dữ liệu HOẶC dữ liệu đã quá 30 ngày -> Tạo Job cào mới
+        job_status = crawl_orchestrator.handle_decision(
+            brand_id=brand_id,
+            category_id=category_id,
+            recommended_action=evaluation.recommended_action
+        )
+        
+        user_message = MessageMapper.map(evaluation, job_status)
+        return EvaluateResponse(
+            brand=req.brand,
+            category=req.category,
+            score=None,
+            message=user_message.message,
+            status=user_message.severity
+        )
+    
+    # Tình huống: Dữ liệu vẫn MỚI (Dưới 30 ngày) -> Hiển thị kết quả luôn
     # ===============================
-    # STEP 6: Load analysis result
+    # STEP 5: Load analysis result
     # ===============================
     conn = get_connection()
     cursor = conn.cursor()
@@ -147,7 +148,7 @@ def evaluate_brand(req: EvaluateRequest):
     conn.close()
 
     if analysis_row:
-        score = analysis_row.AvgRating
+        score = analysis_row.AvgRating # (Hoặc có thể map với cột Score nếu bạn lưu vào BrandAnalysisResult)
         message_text = narrate_brand_evaluation(
             brand=req.brand,
             category=req.category,
@@ -159,10 +160,10 @@ def evaluate_brand(req: EvaluateRequest):
         )
         status = "READY"
     else:
-        user_message = MessageMapper.map(evaluation, job_status)
+        # Fallback an toàn
+        status = "PROCESSING"
+        message_text = "Hệ thống đang tổng hợp điểm số, vui lòng đợi giây lát..."
         score = None
-        message_text = user_message.message
-        status = user_message.severity
 
     return EvaluateResponse(
         brand=req.brand,
