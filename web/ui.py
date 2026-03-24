@@ -259,12 +259,18 @@ def admin_dashboard(request: Request, tab: str = "overview"):
 
             # 5. DỮ LIỆU BIỂU ĐỒ: Đếm số Review thu thập được theo 7 ngày gần nhất
             cursor.execute("""
-                SELECT TOP 7 
-                    CAST(CollectedAt AS DATE) as CrawlDate, 
-                    COUNT(ReviewId) as DailyReviews
-                FROM Review
-                WHERE CollectedAt IS NOT NULL
-                GROUP BY CAST(CollectedAt AS DATE)
+                WITH RecentData AS (
+                    SELECT TOP 7 
+                        CAST(CollectedAt AS DATE) as CrawlDate, 
+                        COUNT(ReviewId) as DailyReviews
+                    FROM Review
+                    WHERE CollectedAt IS NOT NULL
+                      AND CAST(CollectedAt AS DATE) <= CAST(GETDATE() AS DATE)
+                    GROUP BY CAST(CollectedAt AS DATE)
+                    ORDER BY CAST(CollectedAt AS DATE) DESC
+                )
+                SELECT CrawlDate, DailyReviews 
+                FROM RecentData 
                 ORDER BY CrawlDate ASC
             """)
             chart_raw = cursor.fetchall()

@@ -20,7 +20,7 @@ Thumbs.db
 .env
 
 
-# Data / model (tuỳ bạn)
+# Data / model
 data/
 models/*.pt
 models/*.h5

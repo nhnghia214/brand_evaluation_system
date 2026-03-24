@@ -371,12 +371,12 @@ def get_or_create_deep_batches(product_id, sold):
 
     if sold >= 1000:
         review_tier = "HIGH"
-        total_pages = 50
+        total_pages = 35
     else:
         review_tier = "MID"
-        total_pages = 30
+        total_pages = 35
 
-    batch_size = 10
+    batch_size = 35
 
     conn = get_connection()
     cursor = conn.cursor()

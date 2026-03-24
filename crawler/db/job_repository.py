@@ -11,19 +11,20 @@ def get_pending_job():
         SELECT TOP 1 JobId, BrandId, CategoryId
         FROM CrawlJob
         WHERE JobStatus = 'PENDING'
-        ORDER BY CreatedAt
+           OR (JobStatus = 'PAUSED' AND (PausedUntil IS NULL OR PausedUntil <= GETDATE()))
+        ORDER BY CreatedAt ASC
     """)
-
+    
     row = cursor.fetchone()
     conn.close()
-
+    
     if not row:
         return None
-
+        
     return {
-        "JobId": row.JobId,
-        "BrandId": row.BrandId,
-        "CategoryId": row.CategoryId
+        "JobId": row[0],
+        "BrandId": row[1],
+        "CategoryId": row[2]
     }
 
 

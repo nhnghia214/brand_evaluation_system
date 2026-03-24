@@ -17,12 +17,11 @@ MIN_SOLD_COUNT = 1                # crawl sản phẩm có bán
 MAX_SEARCH_PAGE = 10   # số page search tối đa (10 page ≈ 600 sản phẩm)
 
 # ===== ANCHOR MODE =====
-ANCHOR_PRODUCT_LIMIT = 3          # mỗi job chỉ tập trung 3 sản phẩm lớn
-ANCHOR_MIN_SOLD_COUNT = 3000      # coi là sản phẩm "nhiều tài nguyên"
-ANCHOR_MAX_REVIEWS = 300          # crawl sâu (Phase1A)
+ANCHOR_PRODUCT_LIMIT = 5          # mỗi job chỉ tập trung 5 sản phẩm lớn
+ANCHOR_MIN_SOLD_COUNT = 1000      # coi là sản phẩm "nhiều tài nguyên"
+ANCHOR_MAX_REVIEWS = 200          # crawl sâu (Phase1A)
 
 # ===== SAFE MODE =====
-SAFE_MAX_REVIEWS = 20             # sản phẩm thường (Phase1B)
+SAFE_MAX_REVIEWS = 200             # sản phẩm thường (Phase1B)
 
-# ===== PHASE 2 (sau này) =====
-MAX_REVIEW_STALE_HOURS = 48       # bao lâu thì quay lại crawl review mới
+MAX_REVIEW_STALE_DAYS = 30       # Chu kỳ 30 ngày sẽ kích hoạt Crawl lại (Incremental)
