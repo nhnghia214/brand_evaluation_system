@@ -186,7 +186,7 @@ class AnalysisService:
         placeholders = ','.join(['?'] * len(successful_ids))
         cursor.execute(f"UPDATE Review SET IsAnalyzed = 1 WHERE ReviewId IN ({placeholders})", successful_ids)
 
-        old_pos_total = old_positive_rate * old_total_evaluated
+        old_pos_total = round(old_positive_rate * old_total_evaluated)
         final_pos = old_pos_total + new_positive_count
         final_total = old_total_evaluated + new_valid_comments
         sentiment_ratio = final_pos / final_total if final_total > 0 else 0.5

@@ -53,7 +53,7 @@ class WorkerAgent(BaseSentimentAgent):
                         {"role": "user", "content": user_content}
                     ],
                     temperature=0.0,
-                    max_tokens=8000
+                    max_tokens=2500
                 )
                 content = response.choices[0].message.content.strip()
                 parsed_data = self._parse_json_safe(content)

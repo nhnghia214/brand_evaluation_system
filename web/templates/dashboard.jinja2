@@ -1,149 +1,177 @@
 {% extends "base.jinja2" %}
-
-{% block title %}Workspace - AI Brand Evaluator{% endblock %}
-
+{% block title %}Hệ thống Phân tích - Tiên Phong Tech{% endblock %}
 {% block content %}
-<div class="max-w-5xl mx-auto w-full px-6 py-12 relative z-10">
-    
-    <div class="mb-8 text-center">
-        <h1 class="text-3xl font-extrabold tracking-tight mb-2">Không gian Phân tích</h1>
-        <p class="text-gray-400">Gửi yêu cầu đánh giá hoặc so sánh các thương hiệu (VD: Colorkey, Flower Knows, Asus,...)</p>
+<div class="max-w-5xl mx-auto w-full px-6 py-12 relative z-10 text-center">
+
+    <h1 class="text-3xl font-extrabold tracking-tight mb-2">Hệ thống Phân tích Thương hiệu Tiên Phong</h1>
+    <p class="text-gray-400 mb-10">Tự động hóa đánh giá và so sánh mức độ uy tín trên sàn TMĐT</p>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+        <div class="bg-space-800 border border-space-700 rounded-2xl p-4 shadow-lg">
+            <h3 class="text-brand-light font-semibold mb-3">Hướng dẫn: Đánh giá độc lập</h3>
+            <div class="w-full h-48 bg-space-900 rounded-lg flex items-center justify-center border border-space-700">
+                <span class="text-gray-500">Video Demo 1</span>
+            </div>
+        </div>
+        <div class="bg-space-800 border border-space-700 rounded-2xl p-4 shadow-lg">
+            <h3 class="text-brand-light font-semibold mb-3">Hướng dẫn: So sánh đối thủ</h3>
+            <div class="w-full h-48 bg-space-900 rounded-lg flex items-center justify-center border border-space-700">
+                <span class="text-gray-500">Video Demo 2</span>
+            </div>
+        </div>
     </div>
 
-    <div class="bg-space-800 border border-space-700 rounded-2xl p-6 mb-10 shadow-xl relative overflow-hidden group">
-        <div class="absolute -top-24 -right-24 w-48 h-48 bg-brand-neon/20 rounded-full blur-[60px] group-hover:bg-brand-neon/30 transition duration-700"></div>
+    <button onclick="openModal()" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-4 px-10 rounded-full shadow-[0_0_20px_rgba(79,70,229,0.5)] transition transform hover:scale-105 text-lg">
+        🚀 Bắt đầu trải nghiệm ngay
+    </button>
+</div>
+
+<div id="experienceModal" class="fixed inset-0 z-50 bg-black/80 hidden items-center justify-center backdrop-blur-sm opacity-0 transition-opacity duration-300">
+    <div class="bg-space-800 border border-space-700 rounded-2xl p-8 w-full max-w-lg shadow-2xl relative">
+        <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
         
-        <form method="post" action="/ask" class="relative z-10">
-            <textarea name="question" rows="3" placeholder="Nhập câu hỏi... (Ví dụ: Đánh giá Mỹ phẩm thương hiệu Colorkey)" 
-                      class="w-full bg-space-900/50 border border-space-700 rounded-xl px-5 py-4 text-white placeholder-gray-500 focus:outline-none focus:border-brand-neon focus:ring-1 focus:ring-brand-neon transition resize-none mb-4">{{ question }}</textarea>
-            <div class="flex justify-end">
-                <button type="submit" class="bg-white text-gray-900 hover:bg-gray-200 px-6 py-2.5 rounded-lg font-semibold transition flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                    Xử lý AI
-                </button>
+        <h2 class="text-2xl font-bold mb-6 text-white">Thông tin Yêu cầu</h2>
+        
+        <form id="evaluationForm" onsubmit="submitForm(event)">
+            <div class="space-y-4 mb-6">
+                <input type="text" id="fullName" placeholder="Họ và tên người nhận báo cáo" required class="w-full bg-space-900 border border-space-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-neon">
+                <input type="text" id="address" placeholder="Địa chỉ (Không bắt buộc)" class="w-full bg-space-900 border border-space-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-neon">
+                <input type="tel" id="phone" placeholder="Số điện thoại liên hệ" required class="w-full bg-space-900 border border-space-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-neon">
+                
+                <input type="text" id="category" placeholder="Danh mục sản phẩm (Không bắt buộc, VD: Son môi, Kem nền...)" class="w-full bg-space-900 border border-space-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-neon">
             </div>
+
+            <div class="flex gap-6 mb-6">
+                <label class="flex items-center gap-2 cursor-pointer text-gray-300 hover:text-white">
+                    <input type="radio" name="mode" value="evaluate" checked onchange="toggleMode()" class="w-4 h-4 text-brand-neon bg-space-900 border-space-600 focus:ring-brand-neon">
+                    Đánh giá độc lập
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer text-gray-300 hover:text-white">
+                    <input type="radio" name="mode" value="compare" onchange="toggleMode()" class="w-4 h-4 text-brand-neon bg-space-900 border-space-600 focus:ring-brand-neon">
+                    So sánh thương hiệu
+                </label>
+            </div>
+
+            <div id="brandInputs" class="space-y-3 mb-8">
+                <div class="flex items-center gap-2 brand-row">
+                    <input type="text" name="brandName" placeholder="Nhập tên thương hiệu (VD: Colorkey)" required class="flex-1 bg-space-900 border border-space-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-neon">
+                    <button type="button" id="btnAddBrand" onclick="addBrand()" class="hidden bg-space-700 hover:bg-space-600 text-white w-12 h-12 rounded-lg flex items-center justify-center transition border border-space-600" title="Thêm thương hiệu">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    </button>
+                </div>
+            </div>
+
+            <button type="submit" id="btnSubmit" class="w-full bg-brand-neon hover:bg-purple-500 text-white font-bold py-3 px-4 rounded-lg transition">
+                Tiếp tục & Gửi yêu cầu
+            </button>
         </form>
-    </div>
-
-    <div class="space-y-6">
-        
-        {% if answer %}
-        <div class="bg-space-800 border border-space-700 rounded-2xl p-6 shadow-lg border-l-4 border-l-brand-neon">
-            <h3 class="text-lg font-bold flex items-center gap-2 mb-3 text-white">
-                <span>✨</span> Phân tích & Đánh giá
-            </h3>
-            <div class="text-gray-300 leading-relaxed whitespace-pre-line text-sm">
-                {{ answer }}
-            </div>
-        </div>
-        {% endif %}
-
-        {% if chart_data %}
-        <div class="bg-space-800 border border-space-700 rounded-2xl p-6 shadow-lg">
-            <h3 class="text-lg font-bold flex items-center gap-2 mb-4 text-white">
-                <span class="text-blue-400">📊</span> Tương quan dữ liệu
-            </h3>
-            <div class="bg-space-900 rounded-xl p-4 border border-space-700/50">
-                <canvas id="compareChart" height="100"></canvas>
-            </div>
-        </div>
-        {% endif %}
-
-        {% if debug_intent %}
-        <div class="bg-space-800 border border-space-700 rounded-2xl p-6 shadow-lg opacity-70 hover:opacity-100 transition">
-            <h3 class="text-sm font-bold flex items-center gap-2 mb-3 text-gray-400 uppercase tracking-wider">
-                ⚙️ Debug Intent Parser
-            </h3>
-            <pre class="text-brand-light text-xs bg-space-900 p-4 rounded-xl overflow-x-auto border border-space-700/50 font-mono">{{ debug_intent }}</pre>
-        </div>
-        {% endif %}
-
     </div>
 </div>
 
-{% if chart_data %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script>
-    Chart.defaults.color = '#9CA3AF';
-    Chart.defaults.borderColor = 'rgba(55, 65, 81, 0.5)';
-    Chart.defaults.font.family = 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial';
+    const modal = document.getElementById('experienceModal');
+    
+    function openModal() {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        setTimeout(() => modal.classList.remove('opacity-0'), 10);
+    }
 
-    const labels = {{ chart_data.labels | tojson }};
-    const scores = {{ chart_data.scores | tojson }};
-    const totalReviews = {{ chart_data.total_reviews | tojson }};
+    function closeModal() {
+        modal.classList.add('opacity-0');
+        setTimeout(() => {
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
+        }, 300);
+    }
 
-    new Chart(document.getElementById('compareChart'), {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [
-                {
-                    label: 'Điểm số (Score)',
-                    data: scores,
-                    backgroundColor: '#8B5CF6',
-                    borderRadius: 4,
-                    yAxisID: 'y' // Gắn vào trục bên trái
-                },
-                {
-                    label: 'Lượng Reviews',
-                    data: totalReviews,
-                    backgroundColor: '#3B82F6',
-                    borderRadius: 4,
-                    yAxisID: 'y1' // Gắn vào trục bên phải
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            interaction: {
-                mode: 'index',
-                intersect: false,
-            },
-            scales: {
-                y: {
-                    type: 'linear',
-                    display: true,
-                    position: 'left',
-                    beginAtZero: true,
-                    suggestedMax: 10, 
-                    title: {
-                        display: true,
-                        text: 'Điểm số',
-                        color: '#8B5CF6'
-                    }
-                },
-                y1: {
-                    type: 'linear',
-                    display: true,
-                    position: 'right',
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Tổng lượng Review',
-                        color: '#3B82F6'
-                    },
-                    // Tắt lưới (grid) của trục này để không bị đè vạch kẻ lên trục Y trái
-                    grid: {
-                        drawOnChartArea: false, 
-                    },
-                }
-            },
-            plugins: { 
-                legend: { position: 'top' },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            let label = context.dataset.label || '';
-                            if (label) { label += ': '; }
-                            if (context.parsed.y !== null) {
-                                label += context.parsed.y;
-                            }
-                            return label;
-                        }
-                    }
-                }
-            }
+    function toggleMode() {
+        const mode = document.querySelector('input[name="mode"]:checked').value;
+        const btnAdd = document.getElementById('btnAddBrand');
+        const container = document.getElementById('brandInputs');
+
+        if (mode === 'evaluate') {
+            btnAdd.classList.add('hidden');
+            // Reset lại chỉ còn 1 input
+            container.innerHTML = `
+                <div class="flex items-center gap-2 brand-row">
+                    <input type="text" name="brandName" placeholder="Nhập tên thương hiệu (VD: Colorkey)" required class="flex-1 bg-space-900 border border-space-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-neon">
+                    <button type="button" id="btnAddBrand" onclick="addBrand()" class="hidden bg-space-700 hover:bg-space-600 text-white w-12 h-12 rounded-lg flex items-center justify-center transition border border-space-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    </button>
+                </div>`;
+        } else {
+            btnAdd.classList.remove('hidden');
         }
-    });
+    }
+
+    function addBrand() {
+        const container = document.getElementById('brandInputs');
+        const newRow = document.createElement('div');
+        newRow.className = 'flex items-center gap-2 brand-row';
+        newRow.innerHTML = `
+            <input type="text" name="brandName" placeholder="Thương hiệu đối thủ..." required class="flex-1 bg-space-900 border border-space-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-neon">
+            <button type="button" onclick="this.parentElement.remove()" class="bg-red-500/20 hover:bg-red-500/40 text-red-400 border border-red-500/50 w-12 h-12 rounded-lg flex items-center justify-center transition" title="Xóa">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path></svg>
+            </button>
+        `;
+        container.appendChild(newRow);
+    }
+
+    async function submitForm(e) {
+        e.preventDefault();
+        const mode = document.querySelector('input[name="mode"]:checked').value;
+        const brandInputs = document.querySelectorAll('input[name="brandName"]');
+        const brands = Array.from(brandInputs).map(i => i.value.trim()).filter(v => v);
+
+        if (mode === 'compare' && brands.length < 2) {
+            Swal.fire({ icon: 'warning', title: 'Thiếu dữ liệu', text: 'Chế độ so sánh yêu cầu nhập ít nhất 2 thương hiệu!', background: '#1F2937', color: '#fff' });
+            return;
+        }
+
+        const payload = {
+            fullName: document.getElementById('fullName').value,
+            address: document.getElementById('address').value,
+            phone: document.getElementById('phone').value,
+            mode: mode,
+            brands: brands,
+            category: document.getElementById('category').value.trim()
+        };
+
+        const btnSubmit = document.getElementById('btnSubmit');
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = 'Đang xử lý...';
+
+        try {
+            const res = await fetch('/api/submit-request', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                closeModal();
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Gửi yêu cầu thành công!',
+                    text: `Kết quả phân tích đã được gửi về địa chỉ Email của bạn. Vui lòng kiểm tra hộp thư!`,
+                    background: '#1F2937',
+                    color: '#fff',
+                    confirmButtonColor: '#8B5CF6'
+                });
+            } else {
+                throw new Error("Lỗi hệ thống");
+            }
+        } catch (err) {
+            Swal.fire({ icon: 'error', title: 'Lỗi', text: 'Có lỗi xảy ra, vui lòng thử lại!', background: '#1F2937', color: '#fff' });
+        } finally {
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = 'Tiếp tục & Gửi yêu cầu';
+        }
+    }
 </script>
-{% endif %}
 {% endblock %}
