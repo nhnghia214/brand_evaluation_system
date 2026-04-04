@@ -4,6 +4,9 @@ import os
 import uuid
 from dotenv import load_dotenv
 
+import json
+from openai import AsyncOpenAI
+
 from authlib.integrations.starlette_client import OAuth
 from starlette.config import Config
 
@@ -40,6 +43,20 @@ templates = Jinja2Templates(directory="web/templates")
 SECRET_KEY = os.getenv("SECRET_KEY", "fallback_secret_key")
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
 
+
+def mask_sensitive_data(text: str, mask_type: str = "text") -> str:
+    """Che giấu một phần thông tin cá nhân"""
+    if not text: return ""
+    if mask_type == "email":
+        parts = text.split('@')
+        if len(parts) == 2:
+            name, domain = parts
+            return f"{name[:3]}***@{domain}"
+        return "***"
+    elif mask_type == "phone":
+        return f"{text[:3]}****{text[-3:]}" if len(text) >= 9 else "***"
+    else:
+        return f"{text[:4]}***" if len(text) > 4 else "***"
 
 # ==========================================
 # CẤU HÌNH GOOGLE OAUTH2
@@ -147,7 +164,26 @@ async def auth_callback(request: Request):
             
         email = user_info.get("email")
         name = user_info.get("name")
-        
+
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT Da_Khoa FROM NguoiDung WHERE Email = ?", (email,))
+        user_db = cursor.fetchone()
+        conn.close()
+
+        if user_db and user_db.Da_Khoa:
+            # Nếu bị khóa, trả về trang Lỗi luôn, không cấp Token
+            return HTMLResponse(f"""
+            <div style="background-color: #0B0F19; height: 100vh; display: flex; align-items: center; justify-content: center; font-family: sans-serif; color: white;">
+                <div style="background-color: #1F2937; padding: 40px; border-radius: 10px; text-align: center; border-top: 4px solid #EF4444; max-width: 500px;">
+                    <h2 style="color: #EF4444; margin-bottom: 15px;">🚫 TÀI KHOẢN BỊ TẠM KHÓA</h2>
+                    <p style="color: #D1D5DB; line-height: 1.6;">Tài khoản <b>{email}</b> đã bị khóa do vi phạm chính sách nội dung nhiều lần.</p>
+                    <p style="color: #D1D5DB; line-height: 1.6; margin-bottom: 25px;">Vui lòng kiểm tra hộp thư email của bạn để lấy liên kết khiếu nại.</p>
+                    <a href="/" style="background-color: #374151; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none;">Quay lại Trang chủ</a>
+                </div>
+            </div>
+            """)
+
         # CHỈ ĐỊNH QUYỀN ADMIN DUY NHẤT
         role = "admin" if email == "nhoangnghia2104@gmail.com" else "user"
         
@@ -229,6 +265,10 @@ def admin_dashboard(request: Request, tab: str = "overview"):
     }
 
     try:
+        # ĐẾM SỐ ĐƠN KHIẾU NẠI CHỜ XỬ LÝ (Gửi ra mọi Tab để hiện chuông đỏ)
+        cursor.execute("SELECT COUNT(*) AS PendingAppeals FROM Don_KhieuNai WHERE TrangThai_GiaiQuyet = N'Chờ xử lý'")
+        context["pending_appeals"] = cursor.fetchone().PendingAppeals
+
         # ==================================================
         # TAB 1: THỐNG KÊ CHUNG (Giữ nguyên logic cũ của bạn + Biểu đồ)
         # ==================================================
@@ -329,6 +369,94 @@ def admin_dashboard(request: Request, tab: str = "overview"):
             # Lấy danh sách Thương hiệu
             cursor.execute("SELECT BrandId, BrandName, CreatedAt FROM Brand ORDER BY BrandId DESC")
             context["all_brands"] = cursor.fetchall()
+
+        elif tab == "requests":
+            # Lấy tham số tìm kiếm
+            search = request.query_params.get("search", "").strip()
+            date_from = request.query_params.get("date_from", "")
+            date_to = request.query_params.get("date_to", "")
+
+            # Xây dựng Query linh hoạt
+            query = """
+                SELECT r.Ma_YeuCau, u.HoTen, r.Email, r.SoDienThoai, r.DiaChi, r.CheDo, r.ThuongHieu, r.TrangThai_AI, r.NgayGui
+                FROM NhatKy_YeuCau r
+                JOIN NguoiDung u ON r.Email = u.Email
+                WHERE u.Da_Khoa = 0  -- Chỉ hiện tài khoản đang hoạt động
+            """
+            params = []
+
+            if search:
+                query += " AND (u.HoTen LIKE ? OR r.Email LIKE ? OR r.ThuongHieu LIKE ?)"
+                params.extend([f"%{search}%", f"%{search}%", f"%{search}%"])
+            
+            if date_from:
+                query += " AND CAST(r.NgayGui AS DATE) >= ?"
+                params.append(date_from)
+                
+            if date_to:
+                query += " AND CAST(r.NgayGui AS DATE) <= ?"
+                params.append(date_to)
+            # Nếu có date_from mà không có date_to, query vẫn lấy từ ngày đó trở đi. 
+            # Nếu muốn chọn 1 ngày thì gửi date_from và date_to giống nhau.
+
+            query += " ORDER BY r.NgayGui DESC"
+            cursor.execute(query, tuple(params))
+            raw_requests = cursor.fetchall()
+
+            # Che giấu dữ liệu trước khi gửi ra UI
+            processed_requests = []
+            for req_row in raw_requests:
+                processed_requests.append({
+                    "id": req_row.Ma_YeuCau,
+                    "name": req_row.HoTen,
+                    "masked_email": mask_sensitive_data(req_row.Email, "email"),
+                    "masked_phone": mask_sensitive_data(req_row.SoDienThoai, "phone"),
+                    "masked_address": mask_sensitive_data(req_row.DiaChi, "text"),
+                    "full_email": req_row.Email,
+                    "full_phone": req_row.SoDienThoai,
+                    "full_address": req_row.DiaChi,
+                    "mode": req_row.CheDo,
+                    "brands": req_row.ThuongHieu,
+                    "status": req_row.TrangThai_AI,
+                    "date": req_row.NgayGui.strftime("%d/%m/%Y %H:%M") if req_row.NgayGui else ""
+                })
+            context["active_requests"] = processed_requests
+            context["search_params"] = {"search": search, "date_from": date_from, "date_to": date_to}
+
+            # Lấy danh sách Tài Khoản Đã Khóa (Blacklist)
+            cursor.execute("""
+                SELECT Email, HoTen, NgayTao 
+                FROM NguoiDung 
+                WHERE Da_Khoa = 1
+            """)
+            context["locked_users"] = cursor.fetchall()
+
+            # Lấy lịch sử vi phạm của những tài khoản đã khóa
+            locked_history = {}
+            if context["locked_users"]:
+                locked_emails = [u.Email for u in context["locked_users"]]
+                placeholders = ','.join(['?'] * len(locked_emails))
+                cursor.execute(f"""
+                    SELECT Ma_YeuCau, Email, ThuongHieu, TrangThai_AI, NgayGui 
+                    FROM NhatKy_YeuCau 
+                    WHERE Email IN ({placeholders}) AND TrangThai_AI = N'Vi phạm'
+                    ORDER BY NgayGui DESC
+                """, tuple(locked_emails))
+                for row in cursor.fetchall():
+                    if row.Email not in locked_history:
+                        locked_history[row.Email] = []
+                    locked_history[row.Email].append(row)
+            context["locked_history"] = locked_history
+
+            # Lấy danh sách Khiếu nại chờ xử lý
+            cursor.execute("""
+                SELECT k.Ma_KhieuNai, k.Email, u.HoTen, k.NoiDung_KhieuNai, k.NgayGhiNhan 
+                FROM Don_KhieuNai k
+                JOIN NguoiDung u ON k.Email = u.Email
+                WHERE k.TrangThai_GiaiQuyet = N'Chờ xử lý'
+                ORDER BY k.NgayGhiNhan ASC
+            """)
+            context["appeals"] = cursor.fetchall()
 
     except Exception as e:
         print(f"Lỗi truy vấn Admin: {e}")
@@ -527,6 +655,70 @@ def ask(request: Request, question: str = Form(...)):
     return templates.TemplateResponse("dashboard.jinja2", {"request": request, "user": user, "question": question, "answer": "Không hiểu được câu hỏi.", "chart_data": None, "debug_intent": debug_intent})
 
 
+# ==========================================
+# GỬI MAIL KHÓA TÀI KHOẢN KHIẾU NẠI
+# ==========================================
+def send_lock_email(to_email: str, full_name: str):
+    sender_email = os.getenv("EMAIL_SENDER")
+    sender_password = os.getenv("EMAIL_PASSWORD")
+    if not to_email or not sender_email: return
+
+    msg = MIMEMultipart()
+    msg['From'] = f"Tiên Phong Tech <{sender_email}>"
+    msg['To'] = to_email
+    msg['Subject'] = "🚨 Thông báo Tạm khóa tài khoản truy cập hệ thống AI"
+    
+    html_content = f"""
+    <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+        <h2 style="color: #EF4444;">Thông báo Tạm khóa Tài khoản</h2>
+        <p>Kính gửi <b>{full_name}</b>,</p>
+        <p>Hệ thống Trí tuệ Nhân tạo Gác cổng (Moderator Agent) của chúng tôi nhận thấy tài khoản của bạn đã có từ 3 lần trở lên gửi yêu cầu phân tích chứa nội dung không phù hợp (Spam, câu hỏi không liên quan, hoặc từ ngữ vi phạm tiêu chuẩn).</p>
+        <p>Để bảo vệ tài nguyên hệ thống, quyền truy cập của bạn đã bị <b>TẠM KHÓA</b>.</p>
+        <p>Nếu bạn cho rằng AI của chúng tôi đã đánh giá nhầm, xin vui lòng gửi yêu cầu xem xét lại thông qua Liên kết khiếu nại dưới đây:</p>
+        <a href="http://127.0.0.1:8000/appeal?email={to_email}" style="display:inline-block; padding: 10px 20px; background-color: #F97316; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 10px;">Gửi Đơn Khiếu Nại</a>
+    </div>
+    """
+    msg.attach(MIMEText(html_content, 'html'))
+    try:
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(sender_email, sender_password)
+        server.send_message(msg)
+        server.quit()
+    except Exception as e:
+        print(f"[Email Lỗi] Không thể gửi email khóa: {e}")
+
+# ==========================================
+# AGENT KIỂM DUYỆT ĐẦU VÀO (MODERATOR)
+# ==========================================
+async def check_request_validity(brands: list) -> tuple[bool, str]:
+    """Sử dụng GPT-4o-mini để kiểm duyệt đầu vào từ form"""
+    client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    prompt = f"""
+    Bạn là một Moderator kiểm duyệt dữ liệu. Người dùng yêu cầu hệ thống phân tích các từ khóa sau để tìm thương hiệu/sản phẩm: {brands}.
+    Quy tắc:
+    1. Nếu từ khóa là tên thương hiệu/sản phẩm thật (VD: Samsung, Colorkey, Mac, Asus, giày dép, son môi...), hoặc danh mục hợp lý -> Hợp lệ.
+    2. NẾU từ khóa là câu hỏi giao tiếp (VD: "thời tiết hôm nay thế nào", "xin chào"), spam chữ vô nghĩa ("asdfg"), hoặc từ ngữ thô tục -> KHÔNG hợp lệ.
+    Trả về ĐÚNG định dạng JSON:
+    {{"is_valid": true/false, "reason": "Lý do ngắn gọn nếu false"}}
+    """
+    try:
+        res = await client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            response_format={"type": "json_object"},
+            max_tokens=150,
+            temperature=0.0
+        )
+        data = json.loads(res.choices[0].message.content)
+        return data.get("is_valid", True), data.get("reason", "")
+    except Exception as e:
+        print(f"Lỗi Moderator: {e}")
+        return True, "Bỏ qua kiểm duyệt do lỗi AI"
+
+# ==========================================
+# API NHẬN REQUEST: ĐÃ TÍCH HỢP DB VÀ MODERATOR
+# ==========================================
 REPORT_CACHE = {}
 
 @router.post("/api/submit-request")
@@ -535,32 +727,82 @@ async def submit_analysis_request(req: AnalysisFormRequest, request: Request):
     if not user:
         raise HTTPException(status_code=401, detail="Vui lòng đăng nhập")
 
+    email = user["email"]
+    full_name = req.fullName
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    try:
+        # 1. KIỂM TRA / TẠO MỚI NGƯỜI DÙNG
+        cursor.execute("SELECT Da_Khoa FROM NguoiDung WHERE Email = ?", (email,))
+        user_db = cursor.fetchone()
+        
+        if not user_db:
+            cursor.execute("INSERT INTO NguoiDung (Email, HoTen, Da_Khoa) VALUES (?, ?, 0)", (email, full_name))
+            conn.commit()
+            is_locked = False
+        else:
+            is_locked = bool(user_db.Da_Khoa)
+
+        # 2. CHẶN NẾU TÀI KHOẢN ĐÃ BỊ KHÓA
+        if is_locked:
+            return {"status": "error", "message": "Tài khoản của bạn đã bị khóa do vi phạm nhiều lần. Vui lòng kiểm tra email để khiếu nại."}
+
+        # 3. GỌI MODERATOR AGENT KIỂM DUYỆT YÊU CẦU
+        is_valid, reason = await check_request_validity(req.brands)
+        ai_status = "Hợp lệ" if is_valid else "Vi phạm"
+
+        # 4. LƯU YÊU CẦU VÀO NHẬT KÝ (Để hiển thị ở tab Admin)
+        brands_str = ", ".join(req.brands)
+        cursor.execute("""
+            INSERT INTO NhatKy_YeuCau (Email, SoDienThoai, DiaChi, CheDo, ThuongHieu, TrangThai_AI)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (email, req.phone, req.address, req.mode, brands_str, ai_status))
+        conn.commit()
+
+        # 5. XỬ LÝ NẾU VI PHẠM (KHÔNG ĐƯỢC ĐI TIẾP VÀO LUỒNG CRAWL)
+        if not is_valid:
+            cursor.execute("SELECT COUNT(*) AS SpamCount FROM NhatKy_YeuCau WHERE Email = ? AND TrangThai_AI = N'Vi phạm'", (email,))
+            spam_count = cursor.fetchone().SpamCount
+            
+            if spam_count >= 3:
+                cursor.execute("UPDATE NguoiDung SET Da_Khoa = 1 WHERE Email = ?", (email,))
+                conn.commit()
+                send_lock_email(to_email=email, full_name=full_name) # Bắn mail khóa
+                return {"status": "error", "message": f"Yêu cầu chứa nội dung không hợp lệ. Tài khoản đã bị khóa do vi phạm {spam_count} lần."}
+            
+            return {"status": "error", "message": f"Yêu cầu bị từ chối (Lý do: {reason}). Cảnh báo vi phạm lần {spam_count}/3."}
+
+    except Exception as e:
+        print(f"Lỗi DB ở Submit Request: {e}")
+    finally:
+        conn.close()
+
+    # ========================================================
+    # NẾU VƯỢT QUA KIỂM DUYỆT -> TIẾN HÀNH LOGIC CỦA BẠN BÊN DƯỚI
+    # ========================================================
     report_id = f"REP-{str(uuid.uuid4())[:6].upper()}"
     
-    # Khởi tạo các công cụ của hệ thống
     registrar = BrandCategoryRegistrar()
     orchestrator = CrawlJobOrchestrator()
     resolver = BrandCategoryResolver()
-
     ai_narrative = ""
+    chart_data = None
     
     # ----------------------------------------------------
     # CHẾ ĐỘ 1: ĐÁNH GIÁ 1 THƯƠNG HIỆU
     # ----------------------------------------------------
     if req.mode == "evaluate":
         brand = req.brands[0]
-        category = req.category if req.category else None
+        category = req.category if hasattr(req, 'category') and req.category else None
 
-        # 1. Kiểm tra tồn tại hoặc Tạo mới
         brand_id, is_new_brand = registrar.get_or_create_brand_with_flag(brand)
         category_id = registrar.get_or_create_category(category) if category else None
 
         if is_new_brand:
-            # Nếu brand mới toanh -> Ra lệnh cào data
             orchestrator.handle_decision(brand_id=brand_id, category_id=category_id, recommended_action="NEED_FULL_CRAWL")
-            ai_narrative = f"Hệ thống đang khởi tạo tiến trình thu thập dữ liệu đa nền tảng cho thương hiệu mới: **{brand}**.\n\nQuá trình này yêu cầu xử lý hàng ngàn bình luận và có thể mất từ 24h - 48h. Báo cáo này sẽ tự động cập nhật khi AI hoàn tất phân tích."
+            ai_narrative = f"Hệ thống đang khởi tạo tiến trình thu thập dữ liệu đa nền tảng cho thương hiệu mới: **{brand}**.\n\nQuá trình này yêu cầu xử lý hàng ngàn bình luận và có thể mất từ 24h - 48h."
         else:
-            # 2. Lấy điểm số từ DB thật
             conn = get_connection()
             cursor = conn.cursor()
             cursor.execute("""
@@ -584,7 +826,6 @@ async def submit_analysis_request(req: AnalysisFormRequest, request: Request):
                 orchestrator.handle_decision(brand_id=brand_id, category_id=category_id, recommended_action="NEED_FULL_CRAWL")
                 ai_narrative = f"Dữ liệu của **{brand}** đang trong hàng đợi xử lý của các Agent. Vui lòng truy cập lại liên kết này sau ít giờ."
             else:
-                # 3. Tính điểm trung bình và gọi Trọng tài AI phát biểu
                 avg_score = round(sum(scores) / len(scores), 2)
                 avg_pos = sum(pos_rates) / len(pos_rates) if pos_rates else None
                 avg_neg = sum(neg_rates) / len(neg_rates) if neg_rates else None
@@ -609,7 +850,7 @@ async def submit_analysis_request(req: AnalysisFormRequest, request: Request):
         common_category_names = resolver.get_common_categories(list(brand_id_map.values()))
 
         if not common_category_names:
-            ai_narrative = f"Hiện tại các thương hiệu bạn chọn ({', '.join(req.brands)}) chưa có chung danh mục sản phẩm nào đã được phân tích. Hệ thống đang kích hoạt Crawler để bổ sung dữ liệu chéo."
+            ai_narrative = f"Hiện tại các thương hiệu bạn chọn ({', '.join(req.brands)}) chưa có chung danh mục sản phẩm nào đã được phân tích. Hệ thống đang kích hoạt Crawler."
         else:
             brand_summaries, trend_info = [], {}
             for b_name, b_id in brand_id_map.items():
@@ -638,7 +879,6 @@ async def submit_analysis_request(req: AnalysisFormRequest, request: Request):
             if len(brand_summaries) < 2:
                 ai_narrative = "Một số thương hiệu trong danh sách đang thiếu dữ liệu. Crawler đang ưu tiên xử lý. Vui lòng xem lại báo cáo này sau."
             else:
-                # Gọi Trọng tài AI phân xử so sánh
                 fake_question = f"So sánh {', '.join(req.brands)}"
                 ai_narrative = compare_brands_with_llm(brand_summaries=brand_summaries, trend_info=trend_info, question=fake_question)
 
@@ -648,10 +888,7 @@ async def submit_analysis_request(req: AnalysisFormRequest, request: Request):
                     "total_reviews": [b["total_reviews"] for b in brand_summaries]
                 }
 
-
-    # ----------------------------------------------------
     # LƯU KẾT QUẢ & GỬI EMAIL
-    # ----------------------------------------------------
     REPORT_CACHE[report_id] = {
         "ai_narrative": ai_narrative,
         "brands": req.brands,
@@ -660,13 +897,13 @@ async def submit_analysis_request(req: AnalysisFormRequest, request: Request):
     }
 
     send_evaluation_email(
-        to_email=user["email"], 
-        full_name=req.fullName, 
+        to_email=email, 
+        full_name=full_name, 
         brand_list=req.brands, 
         report_id=report_id
     )
 
-    return {"status": "success", "message": "Yêu cầu đã được hệ thống tiếp nhận."}
+    return {"status": "success", "message": "Yêu cầu đã được hệ thống tiếp nhận và lưu thành công."}
 
 
 @router.get("/report/{report_id}", response_class=HTMLResponse)
@@ -693,3 +930,95 @@ def view_report(request: Request, report_id: str):
     }
     
     return templates.TemplateResponse("report.jinja2", context)
+
+
+# ==========================================
+# CÁC API MỚI CHO QUẢN LÝ YÊU CẦU
+# ==========================================
+@router.post("/admin/request/unmark-spam")
+def unmark_spam(request: Request, request_id: int = Form(...), email: str = Form(...)):
+    """Đánh dấu Yêu cầu là Hợp lệ, kiểm tra và mở khóa tài khoản nếu đủ điều kiện"""
+    user = get_current_user(request)
+    if not user or user.get("role") != "admin":
+        return RedirectResponse(url="/", status_code=303)
+
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        # Chuyển trạng thái về Hợp lệ
+        cursor.execute("UPDATE NhatKy_YeuCau SET TrangThai_AI = N'Hợp lệ' WHERE Ma_YeuCau = ?", (request_id,))
+        
+        # Đếm lại số lần vi phạm của Email này
+        cursor.execute("SELECT COUNT(*) AS SpamCount FROM NhatKy_YeuCau WHERE Email = ? AND TrangThai_AI = N'Vi phạm'", (email,))
+        spam_count = cursor.fetchone().SpamCount
+
+        # Nếu số lần vi phạm <= 2, tiến hành Hồi sinh (Mở khóa)
+        if spam_count <= 2:
+            cursor.execute("UPDATE NguoiDung SET Da_Khoa = 0 WHERE Email = ?", (email,))
+        
+        conn.commit()
+    except Exception as e:
+        print(f"Lỗi Unmark Spam: {e}")
+    finally:
+        conn.close()
+    
+    return RedirectResponse(url="/admin?tab=requests", status_code=303)
+
+@router.post("/admin/appeal/resolve")
+def resolve_appeal(request: Request, appeal_id: int = Form(...)):
+    """Đánh dấu Đơn khiếu nại đã giải quyết"""
+    user = get_current_user(request)
+    if not user or user.get("role") != "admin":
+        return RedirectResponse(url="/", status_code=303)
+
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("UPDATE Don_KhieuNai SET TrangThai_GiaiQuyet = N'Đã giải quyết' WHERE Ma_KhieuNai = ?", (appeal_id,))
+        conn.commit()
+    except Exception as e:
+        print(f"Lỗi xử lý khiếu nại: {e}")
+    finally:
+        conn.close()
+    
+    return RedirectResponse(url="/admin?tab=requests", status_code=303)
+
+
+# ==========================================
+# GIAO DIỆN & API: KHIẾU NẠI TÀI KHOẢN
+# ==========================================
+from pydantic import BaseModel
+
+class AppealSubmit(BaseModel):
+    email: str
+    phone: str
+    content: str
+
+@router.get("/appeal", response_class=HTMLResponse)
+def appeal_page(request: Request, email: str = ""):
+    """Trang hiển thị Biểu mẫu Khiếu nại"""
+    return templates.TemplateResponse("appeal.jinja2", {"request": request, "email": email})
+
+@router.post("/api/submit-appeal")
+def submit_appeal_api(req: AppealSubmit):
+    """API lưu Đơn khiếu nại vào Database"""
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        # Kiểm tra xem người dùng đã gửi đơn nào đang chờ xử lý chưa (chống spam đơn)
+        cursor.execute("SELECT COUNT(*) AS Cnt FROM Don_KhieuNai WHERE Email = ? AND TrangThai_GiaiQuyet = N'Chờ xử lý'", (req.email,))
+        if cursor.fetchone().Cnt > 0:
+            return {"status": "error", "message": "Bạn đã gửi một đơn khiếu nại đang chờ xử lý. Vui lòng kiên nhẫn đợi Ban quản trị phản hồi."}
+
+        # Lưu đơn khiếu nại mới
+        cursor.execute("""
+            INSERT INTO Don_KhieuNai (Email, SoDienThoai_LienHe, NoiDung_KhieuNai, TrangThai_GiaiQuyet)
+            VALUES (?, ?, ?, N'Chờ xử lý')
+        """, (req.email, req.phone, req.content))
+        conn.commit()
+        return {"status": "success", "message": "Gửi đơn khiếu nại thành công! Ban quản trị sẽ xem xét trong thời gian sớm nhất."}
+    except Exception as e:
+        print(f"Lỗi DB submit appeal: {e}")
+        return {"status": "error", "message": "Có lỗi hệ thống, vui lòng thử lại sau."}
+    finally:
+        conn.close()
