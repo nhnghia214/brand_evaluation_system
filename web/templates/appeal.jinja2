@@ -1,0 +1,83 @@
+{% extends "base.jinja2" %}
+{% block title %}Đơn Khiếu Nại - Tiên Phong Tech{% endblock %}
+
+{% block content %}
+<div class="flex-1 flex items-center justify-center p-6 relative">
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-orange-500/10 rounded-full blur-[100px] pointer-events-none"></div>
+
+    <div class="w-full max-w-lg bg-space-800/90 border border-space-700 rounded-2xl p-8 backdrop-blur-xl relative z-10 shadow-2xl">
+        <div class="text-center mb-6">
+            <h2 class="text-2xl font-bold text-white mb-2">Đơn Khiếu Nại Dịch Vụ</h2>
+            <p class="text-gray-400 text-sm">Vui lòng điền thông tin để yêu cầu mở khóa tài khoản</p>
+        </div>
+
+        <form id="appealForm" onsubmit="submitAppeal(event)">
+            <div class="space-y-4">
+                <div>
+                    <label class="text-sm text-gray-400 mb-1 block">Email tài khoản bị khóa</label>
+                    <input type="text" id="email" value="{{ email }}" readonly class="w-full bg-space-900 border border-space-600 rounded-lg px-4 py-3 text-gray-500 cursor-not-allowed font-medium">
+                </div>
+                
+                <div>
+                    <label class="text-sm text-gray-400 mb-1 block">Số điện thoại liên hệ</label>
+                    <input type="tel" id="phone" placeholder="Nhập SĐT của bạn..." required class="w-full bg-space-900 border border-space-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-orange-500 transition">
+                </div>
+
+                <div>
+                    <label class="text-sm text-gray-400 mb-1 block">Nội dung khiếu nại (Có thể chỉnh sửa)</label>
+                    <textarea id="content" rows="4" class="w-full bg-space-900 border border-space-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-orange-500 transition resize-none">Chào Ban quản trị Tiên Phong Tech, 
+Tôi cho rằng hệ thống AI đã có sự nhầm lẫn khi lọc từ khóa trong các yêu cầu phân tích của tôi. Xin vui lòng xem xét và mở lại quyền truy cập cho tài khoản của tôi. Trân trọng.</textarea>
+                </div>
+            </div>
+
+            <button type="submit" id="btnSubmit" class="w-full mt-6 bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-4 rounded-lg transition flex justify-center items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                Gửi Khiếu Nại
+            </button>
+        </form>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    async function submitAppeal(e) {
+        e.preventDefault();
+        const payload = {
+            email: document.getElementById('email').value,
+            phone: document.getElementById('phone').value,
+            content: document.getElementById('content').value
+        };
+        const btnSubmit = document.getElementById('btnSubmit');
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = 'Đang xử lý...';
+
+        try {
+            const res = await fetch('/api/submit-appeal', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            
+            if (data.status === 'success') {
+                Swal.fire({
+                    icon: 'success', title: 'Thành công', text: data.message, 
+                    background: '#1F2937', color: '#fff', confirmButtonColor: '#F97316'
+                }).then(() => {
+                    window.location.href = '/'; // Gửi xong thì đuổi về trang chủ
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error', title: 'Từ chối', text: data.message, 
+                    background: '#1F2937', color: '#fff'
+                });
+            }
+        } catch (err) {
+            Swal.fire({ icon: 'error', title: 'Lỗi', text: 'Có lỗi kết nối, vui lòng thử lại!', background: '#1F2937', color: '#fff' });
+        } finally {
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg> Gửi Khiếu Nại';
+        }
+    }
+</script>
+{% endblock %}

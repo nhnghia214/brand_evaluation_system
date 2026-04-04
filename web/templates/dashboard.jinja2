@@ -153,18 +153,26 @@
                 body: JSON.stringify(payload)
             });
 
-            if (res.ok) {
-                closeModal();
+            const data = await res.json(); // Đọc dữ liệu JSON từ Backend trả về
+
+            closeModal(); // Đóng form lại
+
+            if (data.status === 'success') {
                 Swal.fire({
-                    icon: 'success',
-                    title: 'Gửi yêu cầu thành công!',
-                    text: `Kết quả phân tích đã được gửi về địa chỉ Email của bạn. Vui lòng kiểm tra hộp thư!`,
-                    background: '#1F2937',
-                    color: '#fff',
-                    confirmButtonColor: '#8B5CF6'
+                    icon: 'success', title: 'Gửi yêu cầu thành công!', text: data.message,
+                    background: '#1F2937', color: '#fff', confirmButtonColor: '#8B5CF6'
                 });
             } else {
-                throw new Error("Lỗi hệ thống");
+                // NẾU LÀ SPAM HOẶC BỊ KHÓA
+                Swal.fire({
+                    icon: 'error', title: 'Yêu cầu bị từ chối!', text: data.message,
+                    background: '#1F2937', color: '#fff', confirmButtonColor: '#EF4444'
+                }).then(() => {
+                    // Nếu thông báo có chứa chữ "khóa", LẬP TỨC ĐÁ VĂNG (LOGOUT)
+                    if (data.message.includes("khóa")) {
+                        window.location.href = '/auth/logout';
+                    }
+                });
             }
         } catch (err) {
             Swal.fire({ icon: 'error', title: 'Lỗi', text: 'Có lỗi xảy ra, vui lòng thử lại!', background: '#1F2937', color: '#fff' });
