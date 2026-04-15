@@ -8,16 +8,18 @@
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
         <div class="bg-space-800 border border-space-700 rounded-2xl p-4 shadow-lg">
-            <h3 class="text-brand-light font-semibold mb-3">Hướng dẫn: Đánh giá độc lập</h3>
-            <div class="w-full h-48 bg-space-900 rounded-lg flex items-center justify-center border border-space-700">
-                <span class="text-gray-500">Video Demo 1</span>
-            </div>
+            <h3 class="text-brand-light font-semibold mb-3">Hướng dẫn: Đánh giá thương hiệu độc lập</h3>
+            <video controls class="w-full h-48 rounded-lg border border-space-700">
+                <source src="{{ url_for('static', path='videos/DanhGia.mp4') }}" type="video/mp4">
+                Trình duyệt của bạn không hỗ trợ video.
+            </video>
         </div>
         <div class="bg-space-800 border border-space-700 rounded-2xl p-4 shadow-lg">
-            <h3 class="text-brand-light font-semibold mb-3">Hướng dẫn: So sánh đối thủ</h3>
-            <div class="w-full h-48 bg-space-900 rounded-lg flex items-center justify-center border border-space-700">
-                <span class="text-gray-500">Video Demo 2</span>
-            </div>
+            <h3 class="text-brand-light font-semibold mb-3">Hướng dẫn: So sánh các thương hiệu</h3>
+            <video controls class="w-full h-48 rounded-lg border border-space-700">
+                <source src="{{ url_for('static', path='videos/SoSanh.mp4') }}" type="video/mp4">
+                Trình duyệt của bạn không hỗ trợ video.
+            </video>
         </div>
     </div>
 

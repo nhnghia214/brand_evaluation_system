@@ -90,7 +90,7 @@ class AnalysisService:
 
         # 2. TÌM NHỮNG BÌNH LUẬN CHƯA PHÂN TÍCH (LẤY TOP 25 THEO LÔ)
         cursor.execute("""
-            SELECT TOP 25 r.ReviewId, r.Comment FROM Review r
+            SELECT TOP 10 r.ReviewId, r.Comment FROM Review r
             JOIN Product p ON r.ProductId = p.ProductId
             WHERE p.BrandId = ? AND p.CategoryId = ?
             AND r.Comment IS NOT NULL
@@ -236,7 +236,7 @@ class AnalysisService:
                 writer = csv.writer(f)
                 # Viết Header nếu file chưa tồn tại
                 if not file_exists:
-                    writer.writerow(['ReviewId', 'Is_Valid', 'Is_Seeding', 'Worker1_Llama8B', 'Worker2_Llama70B', 'Worker3_Mixtral', 'Referee_GPT4oMini', 'Final_Score'])
+                    writer.writerow(['ReviewId', 'Is_Valid', 'Is_Seeding', 'Worker1_Llama8B', 'Worker2_Llama70B', 'Worker3_Llama8B_Backup', 'Referee_GPT4oMini', 'Final_Score'])
                 
                 # Ghi nối tiếp từng dòng thành công
                 for item in processed_batch:
