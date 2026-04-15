@@ -31,6 +31,10 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from web.schemas import AnalysisFormRequest
 
+import time
+from payos import PayOS
+from payos.type import ItemData, PaymentData
+
 
 # Load các biến môi trường từ file .env
 load_dotenv()
@@ -43,6 +47,13 @@ templates = Jinja2Templates(directory="web/templates")
 # ==========================================
 SECRET_KEY = os.getenv("SECRET_KEY", "fallback_secret_key")
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
+
+# Khởi tạo PayOS Client
+payos_client = PayOS(
+    client_id=os.getenv("PAYOS_CLIENT_ID", ""),
+    api_key=os.getenv("PAYOS_API_KEY", ""),
+    checksum_key=os.getenv("PAYOS_CHECKSUM_KEY", "")
+)
 
 
 def mask_sensitive_data(text: str, mask_type: str = "text") -> str:
@@ -734,26 +745,57 @@ async def submit_analysis_request(req: AnalysisFormRequest, request: Request):
     cursor = conn.cursor()
 
     try:
-        # 1. KIỂM TRA / TẠO MỚI NGƯỜI DÙNG
-        cursor.execute("SELECT Da_Khoa FROM NguoiDung WHERE Email = ?", (email,))
+        # 🚀 1. LẤY THÊM THÔNG TIN GÓI VÀ NGÀY HẾT HẠN
+        cursor.execute("SELECT Da_Khoa, Goi_DichVu, Ngay_HetHan FROM NguoiDung WHERE Email = ?", (email,))
         user_db = cursor.fetchone()
         
+        # Xác định Admin
+        is_admin = (email == "nhoangnghia2104@gmail.com")
+
         if not user_db:
-            cursor.execute("INSERT INTO NguoiDung (Email, HoTen, Da_Khoa) VALUES (?, ?, 0)", (email, full_name))
+            # Tặng 7 ngày dùng thử cho User mới (Hoặc VIP vĩnh viễn cho Admin)
+            ngay_tao = datetime.now()
+            
+            if is_admin:
+                goi_dich_vu = 'VIP'
+                ngay_het_han = None # Admin không bao giờ hết hạn
+            else:
+                goi_dich_vu = 'TRIAL'
+                ngay_het_han = ngay_tao + timedelta(days=7)
+
+            cursor.execute("""
+                INSERT INTO NguoiDung (Email, HoTen, Da_Khoa, NgayTao, Goi_DichVu, Ngay_KichHoat, Ngay_HetHan) 
+                VALUES (?, ?, 0, ?, ?, ?, ?)
+            """, (email, full_name, ngay_tao, ngay_tao, goi_dich_vu, ngay_tao, ngay_het_han))
             conn.commit()
+            
             is_locked = False
+            user_tier = goi_dich_vu
         else:
             is_locked = bool(user_db.Da_Khoa)
+            user_tier = user_db.Goi_DichVu
+            
+            # 🚀 Ghi đè quyền VIP cho Admin phòng trường hợp DB bị sai sót
+            if is_admin:
+                user_tier = 'VIP'
 
-        # 2. CHẶN NẾU TÀI KHOẢN ĐÃ BỊ KHÓA
+            # 🚀 2. CHẶN NẾU GÓI DỊCH VỤ HẾT HẠN (Admin thì luôn được bypass)
+            if not is_admin and user_db.Ngay_HetHan and datetime.now() > user_db.Ngay_HetHan:
+                return {
+                    "status": "expired", 
+                    "tier": user_tier,
+                    "message": f"Quý khách hàng vừa hết hiệu lực gói {user_tier}. Vui lòng gia hạn để sử dụng dịch vụ bên chúng tôi."
+                }
+
+        # 3. CHẶN NẾU TÀI KHOẢN ĐÃ BỊ KHÓA
         if is_locked:
             return {"status": "error", "message": "Tài khoản của bạn đã bị khóa do vi phạm nhiều lần. Vui lòng kiểm tra email để khiếu nại."}
 
-        # 3. GỌI MODERATOR AGENT KIỂM DUYỆT YÊU CẦU
+        # 4. GỌI MODERATOR AGENT KIỂM DUYỆT YÊU CẦU
         is_valid, reason = await check_request_validity(req.brands)
         ai_status = "Hợp lệ" if is_valid else "Vi phạm"
 
-        # 4. LƯU YÊU CẦU VÀO NHẬT KÝ (Để hiển thị ở tab Admin)
+        # 5. LƯU YÊU CẦU VÀO NHẬT KÝ
         brands_str = ", ".join(req.brands)
         cursor.execute("""
             INSERT INTO NhatKy_YeuCau (Email, SoDienThoai, DiaChi, CheDo, ThuongHieu, TrangThai_AI)
@@ -761,7 +803,7 @@ async def submit_analysis_request(req: AnalysisFormRequest, request: Request):
         """, (email, req.phone, req.address, req.mode, brands_str, ai_status))
         conn.commit()
 
-        # 5. XỬ LÝ NẾU VI PHẠM (KHÔNG ĐƯỢC ĐI TIẾP VÀO LUỒNG CRAWL)
+        # 6. XỬ LÝ NẾU VI PHẠM
         if not is_valid:
             cursor.execute("SELECT COUNT(*) AS SpamCount FROM NhatKy_YeuCau WHERE Email = ? AND TrangThai_AI = N'Vi phạm'", (email,))
             spam_count = cursor.fetchone().SpamCount
@@ -769,7 +811,7 @@ async def submit_analysis_request(req: AnalysisFormRequest, request: Request):
             if spam_count >= 3:
                 cursor.execute("UPDATE NguoiDung SET Da_Khoa = 1 WHERE Email = ?", (email,))
                 conn.commit()
-                send_lock_email(to_email=email, full_name=full_name) # Bắn mail khóa
+                send_lock_email(to_email=email, full_name=full_name)
                 return {"status": "error", "message": f"Yêu cầu chứa nội dung không hợp lệ. Tài khoản đã bị khóa do vi phạm {spam_count} lần."}
             
             return {"status": "error", "message": f"Yêu cầu bị từ chối (Lý do: {reason}). Cảnh báo vi phạm lần {spam_count}/3."}
@@ -780,7 +822,7 @@ async def submit_analysis_request(req: AnalysisFormRequest, request: Request):
         conn.close()
 
     # ========================================================
-    # NẾU VƯỢT QUA KIỂM DUYỆT -> TIẾN HÀNH LOGIC CỦA BẠN BÊN DƯỚI
+    # NẾU VƯỢT QUA KIỂM DUYỆT -> TIẾN HÀNH PHÂN TÍCH
     # ========================================================
     report_id = f"REP-{str(uuid.uuid4())[:6].upper()}"
     
@@ -790,7 +832,8 @@ async def submit_analysis_request(req: AnalysisFormRequest, request: Request):
     
     ai_narrative = ""
     chart_data = None
-    is_ready = False # 🚀 CỜ MỚI: Mặc định là chưa có dữ liệu
+    similar_chart_data = None # 🚀 BIẾN LƯU DỮ LIỆU ĐỐI THỦ
+    is_ready = False 
     
     # ----------------------------------------------------
     # CHẾ ĐỘ 1: ĐÁNH GIÁ 1 THƯƠNG HIỆU
@@ -829,7 +872,7 @@ async def submit_analysis_request(req: AnalysisFormRequest, request: Request):
                 orchestrator.handle_decision(brand_id=brand_id, category_id=category_id, recommended_action="NEED_FULL_CRAWL")
                 ai_narrative = f"Dữ liệu của **{brand}** đang trong hàng đợi xử lý của các Agent. Vui lòng truy cập lại liên kết này sau ít giờ."
             else:
-                is_ready = True # 🚀 Đã có Data -> Bật cờ thành công
+                is_ready = True 
                 avg_score = round(sum(scores) / len(scores), 2)
                 avg_pos = sum(pos_rates) / len(pos_rates) if pos_rates else None
                 avg_neg = sum(neg_rates) / len(neg_rates) if neg_rates else None
@@ -839,6 +882,26 @@ async def submit_analysis_request(req: AnalysisFormRequest, request: Request):
                     avg_rating=None, positive_rate=avg_pos, negative_rate=avg_neg,
                     total_reviews=status_row.TotalReviews or 0
                 )
+                
+                # 🚀 LẤY TOP 3 ĐỐI THỦ ĐỂ VẼ BIỂU ĐỒ (Chỉ lấy khi đủ dữ liệu)
+                if category_id:
+                    conn = get_connection()
+                    cursor = conn.cursor()
+                    cursor.execute("""
+                        SELECT TOP 3 b.BrandName, r.Score 
+                        FROM BrandAnalysisResult r 
+                        JOIN Brand b ON r.BrandId = b.BrandId 
+                        WHERE r.CategoryId = ? AND r.BrandId != ? 
+                        ORDER BY r.Score DESC
+                    """, (category_id, brand_id))
+                    similar_brands = cursor.fetchall()
+                    conn.close()
+                    
+                    if similar_brands:
+                        similar_chart_data = {
+                            "labels": [brand] + [b.BrandName for b in similar_brands],
+                            "scores": [avg_score] + [b.Score for b in similar_brands]
+                        }
 
     # ----------------------------------------------------
     # CHẾ ĐỘ 2: SO SÁNH NHIỀU THƯƠNG HIỆU
@@ -882,9 +945,8 @@ async def submit_analysis_request(req: AnalysisFormRequest, request: Request):
 
             if len(brand_summaries) < 2:
                 ai_narrative = "Một số thương hiệu trong danh sách đang thiếu dữ liệu. Crawler đang ưu tiên xử lý. Vui lòng xem lại báo cáo này sau."
-                # Bỏ việc gán chart_data ở đây để tránh lỗi
             else:
-                is_ready = True # 🚀 Đã đủ 2 Brand -> Bật cờ thành công
+                is_ready = True
                 fake_question = f"So sánh {', '.join(req.brands)}"
                 ai_narrative = compare_brands_with_llm(brand_summaries=brand_summaries, trend_info=trend_info, question=fake_question)
 
@@ -894,13 +956,15 @@ async def submit_analysis_request(req: AnalysisFormRequest, request: Request):
                     "total_reviews": [b["total_reviews"] for b in brand_summaries]
                 }
 
-    # LƯU KẾT QUẢ VÀO CACHE & GỬI EMAIL
+    # 🚀 LƯU VÀO CACHE: THÊM TIER VÀ DỮ LIỆU ĐỐI THỦ
     REPORT_CACHE[report_id] = {
         "ai_narrative": ai_narrative,
         "brands": req.brands,
         "mode": req.mode,
         "chart_data": chart_data,
-        "is_ready": is_ready # LƯU CỜ VÀO BỘ NHỚ
+        "similar_chart_data": similar_chart_data,
+        "is_ready": is_ready,
+        "tier": user_tier 
     }
 
     send_evaluation_email(
@@ -916,17 +980,21 @@ async def submit_analysis_request(req: AnalysisFormRequest, request: Request):
 @router.get("/report/{report_id}", response_class=HTMLResponse)
 def view_report(request: Request, report_id: str):
     """Trang hiển thị Báo cáo Phân tích"""
-    
+
     report_data = REPORT_CACHE.get(report_id)
-    
+
     if not report_data:
         ai_narrative = "Báo cáo này đang được cập nhật hoặc phiên bản lưu trữ đã hết hạn. Vui lòng tạo yêu cầu mới tại trang chủ."
         chart_data = None
+        similar_chart_data = None
         is_ready = False
+        tier = "GUEST"
     else:
         ai_narrative = report_data["ai_narrative"]
         chart_data = report_data.get("chart_data")
-        is_ready = report_data.get("is_ready", False) # 🚀 KÉO CỜ TỪ CACHE RA
+        similar_chart_data = report_data.get("similar_chart_data") # Lấy dữ liệu đối thủ
+        is_ready = report_data.get("is_ready", False)
+        tier = report_data.get("tier", "BASIC") # Lấy gói dịch vụ
 
     context = {
         "request": request,
@@ -934,9 +1002,11 @@ def view_report(request: Request, report_id: str):
         "generated_date": datetime.now().strftime("%d/%m/%Y %H:%M"),
         "ai_narrative": ai_narrative,
         "chart_data": chart_data,
-        "is_ready": is_ready # 🚀 ĐẨY CỜ SANG GIAO DIỆN
+        "similar_chart_data": similar_chart_data,
+        "is_ready": is_ready,
+        "tier": tier
     }
-    
+
     return templates.TemplateResponse("report.jinja2", context)
 
 
@@ -1030,3 +1100,306 @@ def submit_appeal_api(req: AppealSubmit):
         return {"status": "error", "message": "Có lỗi hệ thống, vui lòng thử lại sau."}
     finally:
         conn.close()
+
+
+# ==========================================
+# GIAO DIỆN & API: THANH TOÁN (PAYOS) & HÓA ĐƠN
+# ==========================================
+
+@router.get("/checkout", response_class=HTMLResponse)
+def checkout_page(request: Request):
+    """Trang chọn gói và thanh toán"""
+    user = get_current_user(request)
+    if not user:
+        return RedirectResponse(url="/", status_code=303)
+    
+    # Tính ngày bắt đầu và kết thúc để hiển thị
+    start_date = datetime.now()
+    end_date = start_date + timedelta(days=30)
+    
+    return templates.TemplateResponse("checkout.jinja2", {
+        "request": request, 
+        "user": user,
+        "start_date": start_date.strftime("%d/%m/%Y"),
+        "end_date": end_date.strftime("%d/%m/%Y")
+    })
+
+class CheckoutRequest(BaseModel):
+    plan: str # 'BASIC' hoặc 'VIP'
+
+def shorten_name(name):
+    # Rút gọn: "Nguyễn Hoàng Nghĩa" -> "Hoàng Nghĩa"
+    parts = name.split()
+    if len(parts) > 2:
+        return f"{parts[-2]} {parts[-1]}" # Lấy tên đệm và tên chính
+    return name
+
+@router.post("/api/create-payment-link")
+def create_payment_link(req: CheckoutRequest, request: Request):
+    """Tạo link thanh toán PayOS"""
+    user = get_current_user(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Chưa đăng nhập")
+
+    # Định giá gói cước
+    amount = 50000 if req.plan == 'BASIC' else 100000
+    plan_name = "Gói Thường (Basic)" if req.plan == 'BASIC' else "Gói VIP"
+    
+    # Tạo mã đơn hàng duy nhất (Dùng timestamp integer)
+    order_code = int(time.time() * 1000)
+
+    # 🚀 XỬ LÝ RÚT GỌN NỘI DUNG (DƯỚI 25 KÝ TỰ)
+    now = datetime.now()
+    clean_name = shorten_name(user.get("name", "Khach"))
+    date_str = now.strftime("%d%m") # Lấy NgàyTháng (ví dụ 1504)
+    
+    # Tạo chuỗi nội dung: "Hoàng Nghĩa 1504 GH VIP"
+    description = f"{clean_name} {date_str} GH {req.plan}"
+
+    # Kiểm tra cuối cùng trước khi gửi sang PayOS
+    if len(description) > 25:
+        # Nếu vẫn dài, chỉ lấy tên chính và ngày
+        description = f"{clean_name.split()[-1]} {date_str} GH {req.plan}"
+
+    # Lưu đơn hàng vào Database (Trạng thái PENDING)
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO DonHang (MaDon, Email, Goi_DichVu, SoTien, TrangThai)
+        VALUES (?, ?, ?, ?, 'PENDING')
+    """, (order_code, user["email"], req.plan, amount))
+    conn.commit()
+    conn.close()
+
+    # Cấu hình PayOS chuẩn từ payos.type
+    item = ItemData(name=f"Gia han {plan_name} 30 ngay", quantity=1, price=amount)
+    
+    # THỰC TẾ: domain phải là domain thật (hoặc ngrok) để PayOS redirect về. 
+    # Tạm thời dùng localhost cho luồng test.
+    domain = "http://127.0.0.1:8000" 
+    
+    payment_data = PaymentData(
+        orderCode=order_code,
+        amount=amount,
+        description=description,
+        items=[item],
+        cancelUrl=f"{domain}/checkout",
+        returnUrl=f"{domain}/invoice/{order_code}" # Thanh toán xong văng về trang Hóa đơn
+    )
+
+    try:
+        payos_response = payos_client.createPaymentLink(payment_data)
+        return {"status": "success", "checkoutUrl": payos_response.checkoutUrl}
+    except Exception as e:
+        print(f"Lỗi tạo link PayOS: {e}")
+        return {"status": "error", "message": "Không thể tạo link thanh toán lúc này."}
+
+@router.post("/api/payos-webhook")
+async def payos_webhook(request: Request):
+    """Webhook nhận thông báo thanh toán thành công từ PayOS"""
+    try:
+        body = await request.json()
+        data = body.get("data", {})
+        order_code = data.get("orderCode")
+        
+        # Nếu thanh toán thành công
+        if body.get("code") == "00" or data.get("desc") == "success":
+            conn = get_connection()
+            cursor = conn.cursor()
+            
+            # Lấy thông tin đơn hàng (Chỉ lấy đơn PENDING để tránh xử lý trùng)
+            cursor.execute("""
+                SELECT d.Email, d.Goi_DichVu, d.SoTien, u.HoTen 
+                FROM DonHang d JOIN NguoiDung u ON d.Email = u.Email
+                WHERE d.MaDon = ? AND d.TrangThai = 'PENDING'
+            """, (order_code,))
+            order = cursor.fetchone()
+            
+            if order:
+                # 1. Cập nhật trạng thái đơn hàng
+                cursor.execute("UPDATE DonHang SET TrangThai = 'SUCCESS' WHERE MaDon = ?", (order_code,))
+                
+                # 2. Cập nhật quyền lợi người dùng
+                now = datetime.now()
+                end_date = now + timedelta(days=30)
+                cursor.execute("""
+                    UPDATE NguoiDung 
+                    SET Goi_DichVu = ?, Ngay_KichHoat = ?, Ngay_HetHan = ? 
+                    WHERE Email = ?
+                """, (order.Goi_DichVu, now, end_date, order.Email))
+                
+                conn.commit()
+                
+                # 3. 🚀 GỬI EMAIL HÓA ĐƠN KHI WEBHOOK CHẠY TRƯỚC
+                plan_label = "VIP" if order.Goi_DichVu == 'VIP' else "Thường (Basic)"
+                send_invoice_email(
+                    to_email=order.Email,
+                    full_name=order.HoTen,
+                    order_code=order_code,
+                    plan_name=plan_label,
+                    amount=order.SoTien,
+                    start_date=now.strftime("%d/%m/%Y"),
+                    end_date=end_date.strftime("%d/%m/%Y")
+                )
+                
+            conn.close()
+        return {"success": True}
+    except Exception as e:
+        print(f"Lỗi Webhook: {e}")
+        return {"success": False}
+
+@router.get("/invoice/{order_id}", response_class=HTMLResponse)
+def view_invoice(request: Request, order_id: int):
+    """Trang Hóa đơn điện tử có tích hợp Kiểm tra chéo PayOS"""
+    user = get_current_user(request)
+    if not user:
+        return RedirectResponse(url="/", status_code=303)
+
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT d.MaDon, d.Goi_DichVu, d.SoTien, d.TrangThai, d.NgayTao, u.HoTen, u.Email 
+        FROM DonHang d
+        JOIN NguoiDung u ON d.Email = u.Email
+        WHERE d.MaDon = ? AND d.Email = ?
+    """, (order_id, user["email"]))
+    order = cursor.fetchone()
+
+    if not order:
+        conn.close()
+        return HTMLResponse("Không tìm thấy hóa đơn hoặc bạn không có quyền xem.")
+
+    # 🚀 FIX LOCALHOST: TỰ ĐỘNG HỎI PAYOS NẾU ĐƠN VẪN ĐANG PENDING
+    if order.TrangThai == 'PENDING':
+        try:
+            # Gọi API PayOS để lấy trạng thái thực tế của đơn hàng
+            payment_info = payos_client.payment_requests.get(order_id)
+            
+            # Nếu PayOS báo đã thanh toán thành công
+            if payment_info.status == "PAID":
+                # 1. Đổi trạng thái hóa đơn
+                cursor.execute("UPDATE DonHang SET TrangThai = 'SUCCESS' WHERE MaDon = ?", (order_id,))
+                
+                # 2. Gia hạn Gói dịch vụ cho tài khoản
+                now = datetime.now()
+                end_date = now + timedelta(days=30)
+                cursor.execute("""
+                    UPDATE NguoiDung 
+                    SET Goi_DichVu = ?, Ngay_KichHoat = ?, Ngay_HetHan = ? 
+                    WHERE Email = ?
+                """, (order.Goi_DichVu, now, end_date, order.Email))
+                
+                conn.commit()
+                
+                # 3. Lấy lại dữ liệu order mới nhất để hiển thị ra HTML
+                cursor.execute("""
+                    SELECT d.MaDon, d.Goi_DichVu, d.SoTien, d.TrangThai, d.NgayTao, u.HoTen, u.Email 
+                    FROM DonHang d JOIN NguoiDung u ON d.Email = u.Email
+                    WHERE d.MaDon = ?
+                """, (order_id,))
+                order = cursor.fetchone()
+                
+                # 🚀 GỬI EMAIL HÓA ĐƠN
+                plan_label = "VIP" if order.Goi_DichVu == 'VIP' else "Thường (Basic)"
+                send_invoice_email(
+                    to_email=order.Email,
+                    full_name=order.HoTen,
+                    order_code=order_id,
+                    plan_name=plan_label,
+                    amount=order.SoTien,
+                    start_date=now.strftime("%d/%m/%Y"),
+                    end_date=end_date.strftime("%d/%m/%Y")
+                )
+                
+        except Exception as e:
+            print(f"Lỗi khi kiểm tra chéo với PayOS: {e}")
+            
+    conn.close()
+
+    # Tính ngày hết hạn hiển thị trên hóa đơn
+    start_date = order.NgayTao
+    end_date = start_date + timedelta(days=30)
+
+    context = {
+        "request": request,
+        "order": order,
+        "start_date": start_date.strftime("%d/%m/%Y"),
+        "end_date": end_date.strftime("%d/%m/%Y"),
+        "print_date": datetime.now().strftime("%d/%m/%Y %H:%M")
+    }
+    return templates.TemplateResponse("invoice.jinja2", context)
+
+
+def send_invoice_email(to_email, full_name, order_code, plan_name, amount, start_date, end_date):
+    """Gửi email hóa đơn điện tử chuyên nghiệp sau khi thanh toán thành công"""
+    sender_email = os.getenv("EMAIL_SENDER")
+    sender_password = os.getenv("EMAIL_PASSWORD")
+    
+    if not sender_email or not sender_password:
+        print("[Email Error] Thiếu cấu hình EMAIL_SENDER hoặc EMAIL_PASSWORD trong .env")
+        return
+
+    msg = MIMEMultipart()
+    msg['From'] = f"Tiên Phong Tech <{sender_email}>"
+    msg['To'] = to_email
+    msg['Subject'] = f"Hóa đơn thanh toán #{order_code} - Tiên Phong Tech"
+
+    # 🚀 FIX LỖI ĐỊNH DẠNG SỐ: Format xong mới Replace
+    formatted_amount = "{:,.0f}".format(amount).replace(',', '.') + " đ"
+
+    html_content = f"""
+    <html>
+    <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 0;">
+        <div style="max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+            <div style="background-color: #4f46e5; padding: 30px; text-align: center; color: #ffffff;">
+                <h1 style="margin: 0; font-size: 24px; letter-spacing: 1px;">XÁC NHẬN THANH TOÁN</h1>
+                <p style="margin: 5px 0 0; opacity: 0.8;">Cảm ơn bạn đã tin dùng Tiên Phong Tech</p>
+            </div>
+            
+            <div style="padding: 30px; color: #333333;">
+                <p>Xin chào <strong>{full_name}</strong>,</p>
+                <p>Chúng tôi đã nhận được thanh toán cho đơn hàng <strong>#{order_code}</strong>. Gói dịch vụ của bạn đã được kích hoạt thành công.</p>
+                
+                <div style="background-color: #f9fafb; border-radius: 6px; padding: 20px; margin: 20px 0; border: 1px solid #e5e7eb;">
+                    <h3 style="margin-top: 0; color: #4f46e5; border-bottom: 1px solid #e5e7eb; padding-bottom: 10px;">Chi tiết hóa đơn</h3>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 8px 0; color: #6b7280;">Dịch vụ:</td>
+                            <td style="padding: 8px 0; text-align: right; font-weight: bold;">{plan_name}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px 0; color: #6b7280;">Thời hạn:</td>
+                            <td style="padding: 8px 0; text-align: right;">{start_date} - {end_date}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px 0; color: #6b7280;">Tổng cộng:</td>
+                            <td style="padding: 8px 0; text-align: right; font-size: 18px; color: #059669; font-weight: bold;">{formatted_amount}</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div style="text-align: center; margin-top: 30px;">
+                    <a href="http://127.0.0.1:8000/dashboard" style="background-color: #4f46e5; color: #ffffff; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Truy cập Dashboard ngay</a>
+                </div>
+            </div>
+
+            <div style="background-color: #f9fafb; padding: 20px; text-align: center; font-size: 12px; color: #9ca3af; border-top: 1px solid #e5e7eb;">
+                <p style="margin: 0;">Đây là email tự động, vui lòng không trả lời email này.</p>
+                <p style="margin: 5px 0;">&copy; 2026 Tiên Phong Tech - Chuyên trang phân tích thương hiệu Shopee</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    msg.attach(MIMEText(html_content, 'html'))
+
+    try:
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(sender_email, sender_password)
+        server.send_message(msg)
+        server.quit()
+        print(f"[Email Success] Đã gửi hóa đơn cho {to_email}")
+    except Exception as e:
+        print(f"[Email Error] Không thể gửi mail: {e}")

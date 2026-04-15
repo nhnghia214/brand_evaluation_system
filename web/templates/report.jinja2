@@ -64,80 +64,125 @@
     </div>
 
     {% if is_ready %}
-    <h2 class="text-2xl font-bold mb-6 border-l-4 border-brand-neon pl-4">Dashboard Phân tích Kỹ thuật</h2>
+        
+        {% if tier == 'VIP' %}
+        <h2 class="text-2xl font-bold mb-6 border-l-4 border-brand-neon pl-4">Dashboard Phân tích Kỹ thuật</h2>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div class="bg-space-800 border border-space-700 rounded-xl p-5 shadow-lg">
-            <h3 class="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider text-center">1. Tỷ lệ Cảm xúc</h3>
-            <div class="h-64"><canvas id="chart1"></canvas></div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="bg-space-800 border border-space-700 rounded-xl p-5 shadow-lg">
+                <h3 class="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider text-center">1. Tỷ lệ Cảm xúc</h3>
+                <div class="h-64"><canvas id="chart1"></canvas></div>
+            </div>
+
+            <div class="bg-space-800 border border-space-700 rounded-xl p-5 shadow-lg">
+                <h3 class="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider text-center">2. Đánh giá Đa chiều</h3>
+                <div class="h-64"><canvas id="chart2"></canvas></div>
+            </div>
+
+            <div class="bg-space-800 border border-space-700 rounded-xl p-5 shadow-lg">
+                <h3 class="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider text-center">3. Xu hướng 6 tháng</h3>
+                <div class="h-64"><canvas id="chart3"></canvas></div>
+            </div>
+
+            <div class="bg-space-800 border border-space-700 rounded-xl p-5 shadow-lg lg:col-span-2">
+                <h3 class="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider text-center">4. Tần suất Keyword Tích cực</h3>
+                <div class="h-64"><canvas id="chart4"></canvas></div>
+            </div>
+
+            <div class="bg-space-800 border border-space-700 rounded-xl p-5 shadow-lg">
+                <h3 class="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider text-center">5. Phân bổ Rate (Sao)</h3>
+                <div class="h-64"><canvas id="chart5"></canvas></div>
+            </div>
+
+            <div class="bg-space-800 border border-space-700 rounded-xl p-5 shadow-lg">
+                <h3 class="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider text-center">6. Trọng số Đặc điểm</h3>
+                <div class="h-64"><canvas id="chart6"></canvas></div>
+            </div>
+
+            <div class="bg-space-800 border border-space-700 rounded-xl p-5 shadow-lg lg:col-span-2">
+                <h3 class="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider text-center">7. Khối lượng Dữ liệu Cào được</h3>
+                <div class="h-64"><canvas id="chart7"></canvas></div>
+            </div>
+
+            <div class="bg-space-800 border border-space-700 rounded-xl p-5 shadow-lg lg:col-span-2">
+                <h3 class="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider text-center">8. Tần suất Keyword Tiêu cực (Cảnh báo)</h3>
+                <div class="h-64"><canvas id="chart8"></canvas></div>
+            </div>
+
+            <div class="bg-space-800 border border-space-700 rounded-xl p-5 shadow-lg">
+                <h3 class="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider text-center">9. So với TB Ngành</h3>
+                <div class="h-64"><canvas id="chart9"></canvas></div>
+            </div>
+
+            <div class="bg-space-800 border border-space-700 rounded-xl p-5 shadow-lg lg:col-span-3">
+                <h3 class="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider text-center">10. Mô hình Tương quan Giữ chân Khách hàng</h3>
+                <div class="h-64 md:h-80"><canvas id="chart10"></canvas></div>
+            </div>
+            
+            {% if similar_chart_data %}
+            <div class="bg-space-800 border border-space-700 rounded-xl p-5 shadow-lg lg:col-span-3 mt-4 border-t-2 border-indigo-500">
+                <h3 class="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider text-center text-indigo-400">11. Tương quan với Top Đối thủ cùng ngành</h3>
+                <div class="h-64 md:h-80"><canvas id="similarBrandChart"></canvas></div>
+            </div>
+            {% endif %}
         </div>
 
-        <div class="bg-space-800 border border-space-700 rounded-xl p-5 shadow-lg">
-            <h3 class="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider text-center">2. Đánh giá Đa chiều</h3>
-            <div class="h-64"><canvas id="chart2"></canvas></div>
+        <script>
+            // Cấu hình màu sắc chung
+            Chart.defaults.color = '#9CA3AF';
+            Chart.defaults.borderColor = 'rgba(55, 65, 81, 0.3)';
+            const colorBrand = '#8B5CF6'; 
+            const colorPos = '#10B981'; 
+            const colorNeg = '#EF4444'; 
+            const colorNeu = '#F59E0B'; 
+
+            new Chart(document.getElementById('chart1'), { type: 'doughnut', data: { labels: ['Tích cực', 'Tiêu cực', 'Trung lập'], datasets: [{ data: [75, 15, 10], backgroundColor: [colorPos, colorNeg, colorNeu], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '70%' } });
+            new Chart(document.getElementById('chart2'), { type: 'radar', data: { labels: ['Chất lượng', 'Giá cả', 'Dịch vụ', 'Bao bì', 'Giao hàng'], datasets: [{ label: 'Điểm', data: [8.5, 9.2, 7.8, 8.0, 9.5], backgroundColor: 'rgba(139, 92, 246, 0.2)', borderColor: colorBrand, pointBackgroundColor: colorBrand }] }, options: { responsive: true, maintainAspectRatio: false, scales: { r: { min: 0, max: 10, ticks: { display: false } } } } });
+            new Chart(document.getElementById('chart3'), { type: 'line', data: { labels: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6'], datasets: [{ label: 'Điểm TB', data: [7.2, 7.5, 7.8, 8.1, 8.0, 8.5], borderColor: '#3B82F6', tension: 0.4, fill: true, backgroundColor: 'rgba(59, 130, 246, 0.1)' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+            new Chart(document.getElementById('chart4'), { type: 'bar', data: { labels: ['Màu đẹp', 'Mịn lì', 'Thơm', 'Rẻ', 'Giao nhanh'], datasets: [{ label: 'Lượt nhắc', data: [450, 320, 210, 180, 150], backgroundColor: colorPos, borderRadius: 4 }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+            new Chart(document.getElementById('chart5'), { type: 'bar', data: { labels: ['5 Sao', '4 Sao', '3 Sao', '2 Sao', '1 Sao'], datasets: [{ label: '% Đánh giá', data: [65, 20, 8, 3, 4], backgroundColor: [colorPos, colorPos, colorNeu, colorNeg, colorNeg], borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+            new Chart(document.getElementById('chart6'), { type: 'polarArea', data: { labels: ['Giá', 'Mùi hương', 'Độ bền', 'Thiết kế'], datasets: [{ data: [11, 16, 7, 14], backgroundColor: ['#3B82F6', '#8B5CF6', '#EC4899', '#10B981'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false } });
+            new Chart(document.getElementById('chart7'), { type: 'line', data: { labels: ['Tuần 1', 'Tuần 2', 'Tuần 3', 'Tuần 4'], datasets: [{ label: 'Lượng Cào (Crawled)', data: [500, 1200, 2500, 3250], borderColor: '#EC4899', backgroundColor: 'rgba(236, 72, 153, 0.1)', fill: true, stepped: true }] }, options: { responsive: true, maintainAspectRatio: false } });
+            new Chart(document.getElementById('chart8'), { type: 'bar', data: { labels: ['Nhanh trôi', 'Khô môi', 'Giao chậm', 'Thái độ tệ'], datasets: [{ label: 'Lượt nhắc', data: [120, 85, 40, 15], backgroundColor: colorNeg, borderRadius: 4 }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+            new Chart(document.getElementById('chart9'), { type: 'bar', data: { labels: ['Brand', 'Ngành'], datasets: [{ type: 'bar', label: 'Điểm', data: [8.5, 7.2], backgroundColor: [colorBrand, '#4B5563'], borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false } });
+            new Chart(document.getElementById('chart10'), { type: 'bar', data: { labels: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6'], datasets: [{ type: 'line', label: 'Tỉ lệ quay lại (%)', data: [40, 42, 45, 50, 52, 55], borderColor: '#10B981', tension: 0.3, yAxisID: 'y1' }, { type: 'bar', label: 'Review tích cực', data: [150, 180, 220, 300, 350, 400], backgroundColor: '#3B82F6', borderRadius: 4, yAxisID: 'y' }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y1: { position: 'right', grid: { drawOnChartArea: false } } } } });
+            
+            // Vẽ biểu đồ TOP ĐỐI THỦ
+            {% if similar_chart_data %}
+            new Chart(document.getElementById('similarBrandChart'), {
+                type: 'bar',
+                data: {
+                    labels: {{ similar_chart_data.labels | tojson }},
+                    datasets: [{ label: 'Điểm uy tín', data: {{ similar_chart_data.scores | tojson }}, backgroundColor: ['#8B5CF6', '#4B5563', '#4B5563', '#4B5563'], borderRadius: 4 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+            {% endif %}
+        </script>
+        
+        {% else %}
+        <h2 class="text-2xl font-bold mb-6 border-l-4 border-gray-500 pl-4 text-gray-400">Dashboard Phân tích Kỹ thuật</h2>
+                
+        <div class="relative rounded-2xl overflow-hidden border border-space-700 bg-space-800 p-8 min-h-[500px]">
+            <div class="absolute inset-0 filter blur-md opacity-30 pointer-events-none" style="background-image: repeating-linear-gradient(45deg, #1F2937 25%, transparent 25%, transparent 75%, #1F2937 75%, #1F2937), repeating-linear-gradient(45deg, #1F2937 25%, #111827 25%, #111827 75%, #1F2937 75%, #1F2937); background-size: 20px 20px;">
+                <div class="grid grid-cols-2 gap-4 h-full p-4">
+                    <div class="bg-gray-600 rounded-lg"></div><div class="bg-gray-600 rounded-lg"></div>
+                    <div class="bg-gray-600 rounded-lg"></div><div class="bg-gray-600 rounded-lg"></div>
+                </div>
+            </div>
+            
+            <div class="absolute inset-0 flex flex-col items-center justify-center z-10 text-center px-4">
+                <div class="bg-space-900/80 p-8 rounded-2xl border border-brand-neon/30 shadow-[0_0_30px_rgba(139,92,246,0.2)] backdrop-blur-sm max-w-md">
+                    <div class="w-16 h-16 mx-auto bg-brand-neon/20 rounded-full flex items-center justify-center mb-4 text-brand-neon">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white mb-2">Tính năng dành riêng cho VIP</h3>
+                    <p class="text-gray-400 mb-6">Bạn đang sử dụng gói {{ tier }}. Hãy nâng cấp lên gói VIP để mở khóa toàn bộ biểu đồ phân tích kỹ thuật và dữ liệu đối thủ cạnh tranh.</p>
+                    <a href="/checkout" class="inline-block bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-3 px-8 rounded-full shadow-lg transition transform hover:-translate-y-1">Nâng cấp VIP ngay (100k/tháng)</a>
+                </div>
+            </div>
         </div>
-
-        <div class="bg-space-800 border border-space-700 rounded-xl p-5 shadow-lg">
-            <h3 class="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider text-center">3. Xu hướng 6 tháng</h3>
-            <div class="h-64"><canvas id="chart3"></canvas></div>
-        </div>
-
-        <div class="bg-space-800 border border-space-700 rounded-xl p-5 shadow-lg lg:col-span-2">
-            <h3 class="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider text-center">4. Tần suất Keyword Tích cực</h3>
-            <div class="h-64"><canvas id="chart4"></canvas></div>
-        </div>
-
-        <div class="bg-space-800 border border-space-700 rounded-xl p-5 shadow-lg">
-            <h3 class="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider text-center">5. Phân bổ Rate (Sao)</h3>
-            <div class="h-64"><canvas id="chart5"></canvas></div>
-        </div>
-
-        <div class="bg-space-800 border border-space-700 rounded-xl p-5 shadow-lg">
-            <h3 class="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider text-center">6. Trọng số Đặc điểm</h3>
-            <div class="h-64"><canvas id="chart6"></canvas></div>
-        </div>
-
-        <div class="bg-space-800 border border-space-700 rounded-xl p-5 shadow-lg lg:col-span-2">
-            <h3 class="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider text-center">7. Khối lượng Dữ liệu Cào được</h3>
-            <div class="h-64"><canvas id="chart7"></canvas></div>
-        </div>
-
-        <div class="bg-space-800 border border-space-700 rounded-xl p-5 shadow-lg lg:col-span-2">
-            <h3 class="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider text-center">8. Tần suất Keyword Tiêu cực (Cảnh báo)</h3>
-            <div class="h-64"><canvas id="chart8"></canvas></div>
-        </div>
-
-        <div class="bg-space-800 border border-space-700 rounded-xl p-5 shadow-lg">
-            <h3 class="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider text-center">9. So với TB Ngành</h3>
-            <div class="h-64"><canvas id="chart9"></canvas></div>
-        </div>
-
-        <div class="bg-space-800 border border-space-700 rounded-xl p-5 shadow-lg lg:col-span-3">
-            <h3 class="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider text-center">10. Mô hình Tương quan Giữ chân Khách hàng</h3>
-            <div class="h-64 md:h-80"><canvas id="chart10"></canvas></div>
-        </div>
-    </div>
-
-    <script>
-        // Cấu hình màu sắc chung
-        Chart.defaults.color = '#9CA3AF';
-        Chart.defaults.borderColor = 'rgba(55, 65, 81, 0.3)';
-        const colorBrand = '#8B5CF6'; 
-        const colorPos = '#10B981'; 
-        const colorNeg = '#EF4444'; 
-        const colorNeu = '#F59E0B'; 
-
-        new Chart(document.getElementById('chart1'), { type: 'doughnut', data: { labels: ['Tích cực', 'Tiêu cực', 'Trung lập'], datasets: [{ data: [75, 15, 10], backgroundColor: [colorPos, colorNeg, colorNeu], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '70%' } });
-        new Chart(document.getElementById('chart2'), { type: 'radar', data: { labels: ['Chất lượng', 'Giá cả', 'Dịch vụ', 'Bao bì', 'Giao hàng'], datasets: [{ label: 'Điểm', data: [8.5, 9.2, 7.8, 8.0, 9.5], backgroundColor: 'rgba(139, 92, 246, 0.2)', borderColor: colorBrand, pointBackgroundColor: colorBrand }] }, options: { responsive: true, maintainAspectRatio: false, scales: { r: { min: 0, max: 10, ticks: { display: false } } } } });
-        new Chart(document.getElementById('chart3'), { type: 'line', data: { labels: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6'], datasets: [{ label: 'Điểm TB', data: [7.2, 7.5, 7.8, 8.1, 8.0, 8.5], borderColor: '#3B82F6', tension: 0.4, fill: true, backgroundColor: 'rgba(59, 130, 246, 0.1)' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
-        new Chart(document.getElementById('chart4'), { type: 'bar', data: { labels: ['Màu đẹp', 'Mịn lì', 'Thơm', 'Rẻ', 'Giao nhanh'], datasets: [{ label: 'Lượt nhắc', data: [450, 320, 210, 180, 150], backgroundColor: colorPos, borderRadius: 4 }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
-        new Chart(document.getElementById('chart5'), { type: 'bar', data: { labels: ['5 Sao', '4 Sao', '3 Sao', '2 Sao', '1 Sao'], datasets: [{ label: '% Đánh giá', data: [65, 20, 8, 3, 4], backgroundColor: [colorPos, colorPos, colorNeu, colorNeg, colorNeg], borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
-        new Chart(document.getElementById('chart6'), { type: 'polarArea', data: { labels: ['Giá', 'Mùi hương', 'Độ bền', 'Thiết kế'], datasets: [{ data: [11, 16, 7, 14], backgroundColor: ['#3B82F6', '#8B5CF6', '#EC4899', '#10B981'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false } });
-        new Chart(document.getElementById('chart7'), { type: 'line', data: { labels: ['Tuần 1', 'Tuần 2', 'Tuần 3', 'Tuần 4'], datasets: [{ label: 'Lượng Cào (Crawled)', data: [500, 1200, 2500, 3250], borderColor: '#EC4899', backgroundColor: 'rgba(236, 72, 153, 0.1)', fill: true, stepped: true }] }, options: { responsive: true, maintainAspectRatio: false } });
-        new Chart(document.getElementById('chart8'), { type: 'bar', data: { labels: ['Nhanh trôi', 'Khô môi', 'Giao chậm', 'Thái độ tệ'], datasets: [{ label: 'Lượt nhắc', data: [120, 85, 40, 15], backgroundColor: colorNeg, borderRadius: 4 }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
-        new Chart(document.getElementById('chart9'), { type: 'bar', data: { labels: ['Brand', 'Ngành'], datasets: [{ type: 'bar', label: 'Điểm', data: [8.5, 7.2], backgroundColor: [colorBrand, '#4B5563'], borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false } });
-        new Chart(document.getElementById('chart10'), { type: 'bar', data: { labels: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6'], datasets: [{ type: 'line', label: 'Tỉ lệ quay lại (%)', data: [40, 42, 45, 50, 52, 55], borderColor: '#10B981', tension: 0.3, yAxisID: 'y1' }, { type: 'bar', label: 'Review tích cực', data: [150, 180, 220, 300, 350, 400], backgroundColor: '#3B82F6', borderRadius: 4, yAxisID: 'y' }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y1: { position: 'right', grid: { drawOnChartArea: false } } } } });
-    </script>
+        {% endif %}
 
     {% else %}
     <h2 class="text-2xl font-bold mb-6 border-l-4 border-brand-neon pl-4 opacity-50">Dashboard Phân tích Kỹ thuật</h2>

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Hóa đơn #{{ order.MaDon }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @media print {
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .no-print { display: none !important; }
+            .invoice-box { box-shadow: none !important; border: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 py-10 font-sans text-gray-800">
+
+    <div class="max-w-3xl mx-auto">
+        <div class="flex justify-between mb-6 no-print">
+            <a href="/dashboard" class="text-blue-600 hover:text-blue-800 font-medium flex items-center gap-2">
+                &larr; Trở về Dashboard
+            </a>
+            <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded shadow flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                In Hóa Đơn / Lưu PDF
+            </button>
+        </div>
+
+        <div class="bg-white p-10 rounded-lg shadow-xl invoice-box border border-gray-200">
+            <div class="flex justify-between items-start border-b-2 border-gray-100 pb-8 mb-8">
+                <div>
+                    <h1 class="text-4xl font-extrabold text-blue-600 mb-2">INVOICE</h1>
+                    <p class="text-gray-500">Mã đơn hàng: #{{ order.MaDon }}</p>
+                    <p class="text-gray-500">Ngày in: {{ print_date }}</p>
+                </div>
+                <div class="text-right">
+                    <h2 class="text-2xl font-bold text-gray-800">TIÊN PHONG TECH</h2>
+                    <p class="text-gray-500 mt-1">Đại học Nam Cần Thơ</p>
+                    <p class="text-gray-500">Email: support@tienphong.tech</p>
+                </div>
+            </div>
+
+            <div class="flex justify-between mb-10">
+                <div>
+                    <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2">Thanh toán cho:</h3>
+                    <p class="text-lg font-bold text-gray-800">{{ order.HoTen }}</p>
+                    <p class="text-gray-600">{{ order.Email }}</p>
+                </div>
+                <div class="text-right">
+                    <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2">Trạng thái:</h3>
+                    {% if order.TrangThai == 'SUCCESS' %}
+                        <span class="inline-block bg-green-100 text-green-800 font-bold px-4 py-1 rounded-full border border-green-200">ĐÃ THANH TOÁN</span>
+                    {% else %}
+                        <span class="inline-block bg-yellow-100 text-yellow-800 font-bold px-4 py-1 rounded-full border border-yellow-200">ĐANG XỬ LÝ</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <table class="w-full text-left border-collapse mb-10">
+                <thead>
+                    <tr class="bg-gray-50 text-gray-600 uppercase text-sm leading-normal border-y border-gray-200">
+                        <th class="py-4 px-6 font-bold">Mô tả Dịch vụ</th>
+                        <th class="py-4 px-6 font-bold text-center">Thời hạn</th>
+                        <th class="py-4 px-6 font-bold text-right">Thành tiền</th>
+                    </tr>
+                </thead>
+                <tbody class="text-gray-700">
+                    <tr class="border-b border-gray-200 hover:bg-gray-50">
+                        <td class="py-6 px-6">
+                            <p class="font-bold text-lg">Gia hạn Gói {{ 'VIP' if order.Goi_DichVu == 'VIP' else 'Thường' }}</p>
+                            <p class="text-gray-500 text-sm mt-1">Sử dụng hệ thống phân tích AI Đa tác tử</p>
+                        </td>
+                        <td class="py-6 px-6 text-center whitespace-nowrap text-gray-600">
+                            {{ start_date }} &rarr; {{ end_date }}<br><span class="text-xs text-gray-400">(30 ngày)</span>
+                        </td>
+                        <td class="py-6 px-6 text-right font-bold text-lg text-blue-600">
+                            {{ "{:,.0f}".format(order.SoTien).replace(',', '.') }} đ
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="flex justify-end">
+                <div class="w-1/2">
+                    <div class="flex justify-between py-2 border-b border-gray-200">
+                        <span class="font-bold text-gray-600">Tạm tính:</span>
+                        <span class="text-gray-800">{{ "{:,.0f}".format(order.SoTien).replace(',', '.') }} đ</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-gray-200">
+                        <span class="font-bold text-gray-600">Thuế VAT (0%):</span>
+                        <span class="text-gray-800">0 đ</span>
+                    </div>
+                    <div class="flex justify-between py-4 text-2xl font-extrabold text-blue-600">
+                        <span>TỔNG CỘNG:</span>
+                        <span>{{ "{:,.0f}".format(order.SoTien).replace(',', '.') }} đ</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-12 text-center text-gray-400 text-sm border-t border-gray-100 pt-8">
+                <p>Cảm ơn quý khách đã sử dụng dịch vụ của Tiên Phong Tech.</p>
+                <p>Hóa đơn này được tạo tự động bởi hệ thống máy tính.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

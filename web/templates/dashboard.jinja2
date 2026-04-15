@@ -164,6 +164,26 @@
                     icon: 'success', title: 'Gửi yêu cầu thành công!', text: data.message,
                     background: '#1F2937', color: '#fff', confirmButtonColor: '#8B5CF6'
                 });
+            } 
+            else if (data.status === 'expired') {
+                // 🚀 BẮT LỖI HẾT HẠN VÀ HIỂN THỊ POPUP GIA HẠN
+                Swal.fire({
+                    title: 'Dịch vụ đã hết hạn',
+                    text: data.message,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#8B5CF6',
+                    cancelButtonColor: '#4B5563',
+                    confirmButtonText: 'Gia hạn ngay',
+                    cancelButtonText: 'Hủy',
+                    background: '#1F2937', 
+                    color: '#fff'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Chuyển hướng sang trang Checkout
+                        window.location.href = '/checkout';
+                    }
+                });
             } else {
                 // NẾU LÀ SPAM HOẶC BỊ KHÓA
                 Swal.fire({

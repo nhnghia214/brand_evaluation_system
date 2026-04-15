@@ -1,0 +1,100 @@
+{% extends "base.jinja2" %}
+{% block title %}Gia hạn Dịch vụ - Tiên Phong Tech{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto w-full px-6 py-12 relative z-10">
+    <h1 class="text-3xl font-extrabold text-white mb-2 text-center">Gia hạn Gói Dịch Vụ</h1>
+    <p class="text-gray-400 text-center mb-10">Chọn gói cước phù hợp với nhu cầu phân tích của bạn</p>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+        <div class="bg-space-800 border-2 border-space-600 rounded-2xl p-6 cursor-pointer hover:border-blue-500 transition relative" onclick="selectPlan('BASIC', 50000)" id="card-BASIC">
+            <div class="absolute top-0 right-0 bg-space-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-lg">Tiêu chuẩn</div>
+            <h3 class="text-2xl font-bold text-white mb-2">Gói Thường</h3>
+            <div class="text-3xl font-extrabold text-blue-400 mb-4">50.000<span class="text-lg text-gray-400">đ/tháng</span></div>
+            <ul class="text-gray-300 space-y-2 mb-6">
+                <li class="flex items-center gap-2"><svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Yêu cầu đánh giá & So sánh</li>
+                <li class="flex items-center gap-2"><svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Nhận báo cáo AI qua Email</li>
+                <li class="flex items-center gap-2 opacity-50"><svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg> Không có biểu đồ phân tích</li>
+            </ul>
+        </div>
+
+        <div class="bg-space-800 border-2 border-brand-neon rounded-2xl p-6 cursor-pointer hover:shadow-[0_0_20px_rgba(139,92,246,0.3)] transition relative" onclick="selectPlan('VIP', 100000)" id="card-VIP">
+            <div class="absolute top-0 right-0 bg-brand-neon text-white text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-lg">Khuyên dùng</div>
+            <h3 class="text-2xl font-bold text-white mb-2">Gói VIP</h3>
+            <div class="text-3xl font-extrabold text-brand-neon mb-4">100.000<span class="text-lg text-gray-400">đ/tháng</span></div>
+            <ul class="text-gray-300 space-y-2 mb-6">
+                <li class="flex items-center gap-2"><svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Mọi tính năng của gói Thường</li>
+                <li class="flex items-center gap-2"><svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Mở khóa 10 Biểu đồ kỹ thuật</li>
+                <li class="flex items-center gap-2"><svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Biểu đồ so sánh với Đối thủ</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="bg-space-900 border border-space-700 rounded-xl p-6 max-w-2xl mx-auto shadow-lg">
+        <h4 class="text-lg font-bold text-white mb-4 border-b border-space-700 pb-2">Thông tin hóa đơn tạm tính</h4>
+        <div class="flex justify-between text-gray-300 mb-2"><span>Tài khoản:</span> <b>{{ user.email }}</b></div>
+        <div class="flex justify-between text-gray-300 mb-2"><span>Gói đã chọn:</span> <b id="summary-plan" class="text-brand-neon">Gói VIP</b></div>
+        <div class="flex justify-between text-gray-300 mb-2"><span>Thời gian hiệu lực:</span> <b>{{ start_date }} - {{ end_date }} (30 ngày)</b></div>
+        <div class="flex justify-between text-xl font-bold text-white mt-4 pt-4 border-t border-space-700">
+            <span>Tổng thanh toán:</span> <span id="summary-price" class="text-green-400">100.000 đ</span>
+        </div>
+        
+        <button id="btnCheckout" onclick="processCheckout()" class="w-full mt-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-3 px-4 rounded-lg transition text-lg flex items-center justify-center gap-2">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+            Thanh toán qua PayOS
+        </button>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    let selectedPlan = 'VIP'; // Mặc định
+
+    function selectPlan(plan, price) {
+        selectedPlan = plan;
+        // Reset border
+        document.getElementById('card-BASIC').className = "bg-space-800 border-2 border-space-600 rounded-2xl p-6 cursor-pointer hover:border-blue-500 transition relative";
+        document.getElementById('card-VIP').className = "bg-space-800 border-2 border-space-600 rounded-2xl p-6 cursor-pointer hover:border-brand-neon transition relative";
+        
+        // Highlight selected
+        if (plan === 'BASIC') {
+            document.getElementById('card-BASIC').classList.replace('border-space-600', 'border-blue-500');
+            document.getElementById('summary-plan').innerHTML = 'Gói Thường';
+            document.getElementById('summary-plan').className = 'text-blue-400';
+            document.getElementById('summary-price').innerHTML = '50.000 đ';
+        } else {
+            document.getElementById('card-VIP').classList.replace('border-space-600', 'border-brand-neon');
+            document.getElementById('card-VIP').classList.add('shadow-[0_0_20px_rgba(139,92,246,0.3)]');
+            document.getElementById('summary-plan').innerHTML = 'Gói VIP';
+            document.getElementById('summary-plan').className = 'text-brand-neon';
+            document.getElementById('summary-price').innerHTML = '100.000 đ';
+        }
+    }
+
+    async function processCheckout() {
+        const btn = document.getElementById('btnCheckout');
+        btn.disabled = true;
+        btn.innerHTML = 'Đang khởi tạo cổng thanh toán...';
+
+        try {
+            const res = await fetch('/api/create-payment-link', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ plan: selectedPlan })
+            });
+            const data = await res.json();
+            
+            if (data.status === 'success') {
+                window.location.href = data.checkoutUrl; // Chuyển hướng sang PayOS
+            } else {
+                Swal.fire({ icon: 'error', title: 'Lỗi', text: data.message, background: '#1F2937', color: '#fff' });
+                btn.disabled = false;
+                btn.innerHTML = 'Thanh toán qua PayOS';
+            }
+        } catch (err) {
+            Swal.fire({ icon: 'error', title: 'Lỗi hệ thống', text: 'Vui lòng thử lại sau.', background: '#1F2937', color: '#fff' });
+            btn.disabled = false;
+            btn.innerHTML = 'Thanh toán qua PayOS';
+        }
+    }
+</script>
+{% endblock %}
