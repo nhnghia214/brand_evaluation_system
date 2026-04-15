@@ -25,10 +25,19 @@ from core.dto.brand_data_status import BrandDataStatus
 from web.schemas import EvaluateRequest, EvaluateResponse
 from core.layer_c.brand_narrator import narrate_brand_evaluation
 
+from pathlib import Path
+from fastapi.staticfiles import StaticFiles
 
 app = FastAPI(title="Brand Evaluation API")
 app.add_middleware(SessionMiddleware, secret_key="luan_van_ai_brand_evaluator_secret")
 
+BASE_DIR = Path(__file__).resolve().parent
+
+app.mount(
+    "/static",
+    StaticFiles(directory=BASE_DIR / "static"),
+    name="static"
+)
 app.include_router(ui_router)
 
 

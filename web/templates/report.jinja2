@@ -63,10 +63,10 @@
         </div>
     </div>
 
+    {% if is_ready %}
     <h2 class="text-2xl font-bold mb-6 border-l-4 border-brand-neon pl-4">Dashboard Phân tích Kỹ thuật</h2>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        
         <div class="bg-space-800 border border-space-700 rounded-xl p-5 shadow-lg">
             <h3 class="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider text-center">1. Tỷ lệ Cảm xúc</h3>
             <div class="h-64"><canvas id="chart1"></canvas></div>
@@ -116,99 +116,50 @@
             <h3 class="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider text-center">10. Mô hình Tương quan Giữ chân Khách hàng</h3>
             <div class="h-64 md:h-80"><canvas id="chart10"></canvas></div>
         </div>
-
     </div>
+
+    <script>
+        // Cấu hình màu sắc chung
+        Chart.defaults.color = '#9CA3AF';
+        Chart.defaults.borderColor = 'rgba(55, 65, 81, 0.3)';
+        const colorBrand = '#8B5CF6'; 
+        const colorPos = '#10B981'; 
+        const colorNeg = '#EF4444'; 
+        const colorNeu = '#F59E0B'; 
+
+        new Chart(document.getElementById('chart1'), { type: 'doughnut', data: { labels: ['Tích cực', 'Tiêu cực', 'Trung lập'], datasets: [{ data: [75, 15, 10], backgroundColor: [colorPos, colorNeg, colorNeu], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '70%' } });
+        new Chart(document.getElementById('chart2'), { type: 'radar', data: { labels: ['Chất lượng', 'Giá cả', 'Dịch vụ', 'Bao bì', 'Giao hàng'], datasets: [{ label: 'Điểm', data: [8.5, 9.2, 7.8, 8.0, 9.5], backgroundColor: 'rgba(139, 92, 246, 0.2)', borderColor: colorBrand, pointBackgroundColor: colorBrand }] }, options: { responsive: true, maintainAspectRatio: false, scales: { r: { min: 0, max: 10, ticks: { display: false } } } } });
+        new Chart(document.getElementById('chart3'), { type: 'line', data: { labels: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6'], datasets: [{ label: 'Điểm TB', data: [7.2, 7.5, 7.8, 8.1, 8.0, 8.5], borderColor: '#3B82F6', tension: 0.4, fill: true, backgroundColor: 'rgba(59, 130, 246, 0.1)' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+        new Chart(document.getElementById('chart4'), { type: 'bar', data: { labels: ['Màu đẹp', 'Mịn lì', 'Thơm', 'Rẻ', 'Giao nhanh'], datasets: [{ label: 'Lượt nhắc', data: [450, 320, 210, 180, 150], backgroundColor: colorPos, borderRadius: 4 }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+        new Chart(document.getElementById('chart5'), { type: 'bar', data: { labels: ['5 Sao', '4 Sao', '3 Sao', '2 Sao', '1 Sao'], datasets: [{ label: '% Đánh giá', data: [65, 20, 8, 3, 4], backgroundColor: [colorPos, colorPos, colorNeu, colorNeg, colorNeg], borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+        new Chart(document.getElementById('chart6'), { type: 'polarArea', data: { labels: ['Giá', 'Mùi hương', 'Độ bền', 'Thiết kế'], datasets: [{ data: [11, 16, 7, 14], backgroundColor: ['#3B82F6', '#8B5CF6', '#EC4899', '#10B981'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false } });
+        new Chart(document.getElementById('chart7'), { type: 'line', data: { labels: ['Tuần 1', 'Tuần 2', 'Tuần 3', 'Tuần 4'], datasets: [{ label: 'Lượng Cào (Crawled)', data: [500, 1200, 2500, 3250], borderColor: '#EC4899', backgroundColor: 'rgba(236, 72, 153, 0.1)', fill: true, stepped: true }] }, options: { responsive: true, maintainAspectRatio: false } });
+        new Chart(document.getElementById('chart8'), { type: 'bar', data: { labels: ['Nhanh trôi', 'Khô môi', 'Giao chậm', 'Thái độ tệ'], datasets: [{ label: 'Lượt nhắc', data: [120, 85, 40, 15], backgroundColor: colorNeg, borderRadius: 4 }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+        new Chart(document.getElementById('chart9'), { type: 'bar', data: { labels: ['Brand', 'Ngành'], datasets: [{ type: 'bar', label: 'Điểm', data: [8.5, 7.2], backgroundColor: [colorBrand, '#4B5563'], borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false } });
+        new Chart(document.getElementById('chart10'), { type: 'bar', data: { labels: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6'], datasets: [{ type: 'line', label: 'Tỉ lệ quay lại (%)', data: [40, 42, 45, 50, 52, 55], borderColor: '#10B981', tension: 0.3, yAxisID: 'y1' }, { type: 'bar', label: 'Review tích cực', data: [150, 180, 220, 300, 350, 400], backgroundColor: '#3B82F6', borderRadius: 4, yAxisID: 'y' }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y1: { position: 'right', grid: { drawOnChartArea: false } } } } });
+    </script>
+
+    {% else %}
+    <h2 class="text-2xl font-bold mb-6 border-l-4 border-brand-neon pl-4 opacity-50">Dashboard Phân tích Kỹ thuật</h2>
+    
+    <div class="bg-space-800 border border-space-700 border-dashed rounded-2xl p-12 text-center shadow-lg relative overflow-hidden flex flex-col items-center justify-center min-h-[400px]">
+        <div class="absolute inset-0 bg-gradient-to-b from-transparent to-brand-neon/5 opacity-50"></div>
+        
+        <div class="relative w-24 h-24 mb-6">
+            <div class="absolute inset-0 border-4 border-space-600 rounded-full"></div>
+            <div class="absolute inset-0 border-4 border-brand-neon rounded-full border-t-transparent animate-spin"></div>
+            <div class="absolute inset-0 flex items-center justify-center">
+                <svg class="w-8 h-8 text-brand-neon animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+            </div>
+        </div>
+
+        <h3 class="text-xl font-bold text-white mb-3 relative z-10">Dữ liệu đang được AI xử lý</h3>
+        <p class="text-gray-400 max-w-lg mx-auto relative z-10 leading-relaxed">
+            Hệ thống Đa tác tử (Multi-Agent) đang tiến hành thu thập dữ liệu và phân tích ngôn ngữ tự nhiên. 
+            Các biểu đồ chuyên sâu sẽ tự động hiển thị tại đây ngay khi tiến trình hoàn tất.
+        </p>
+    </div>
+    {% endif %}
+
 </div>
-
-<script>
-    // Cấu hình màu sắc chung
-    Chart.defaults.color = '#9CA3AF';
-    Chart.defaults.borderColor = 'rgba(55, 65, 81, 0.3)';
-    const colorBrand = '#8B5CF6'; // Tím
-    const colorPos = '#10B981'; // Xanh lá
-    const colorNeg = '#EF4444'; // Đỏ
-    const colorNeu = '#F59E0B'; // Vàng
-
-    // 1. Doughnut: Tỷ lệ Cảm xúc
-    new Chart(document.getElementById('chart1'), {
-        type: 'doughnut',
-        data: { labels: ['Tích cực', 'Tiêu cực', 'Trung lập'], datasets: [{ data: [75, 15, 10], backgroundColor: [colorPos, colorNeg, colorNeu], borderWidth: 0 }] },
-        options: { responsive: true, maintainAspectRatio: false, cutout: '70%' }
-    });
-
-    // 2. Radar: Đánh giá Đa chiều
-    new Chart(document.getElementById('chart2'), {
-        type: 'radar',
-        data: {
-            labels: ['Chất lượng', 'Giá cả', 'Dịch vụ', 'Bao bì', 'Giao hàng'],
-            datasets: [{ label: 'Điểm', data: [8.5, 9.2, 7.8, 8.0, 9.5], backgroundColor: 'rgba(139, 92, 246, 0.2)', borderColor: colorBrand, pointBackgroundColor: colorBrand }]
-        },
-        options: { responsive: true, maintainAspectRatio: false, scales: { r: { min: 0, max: 10, ticks: { display: false } } } }
-    });
-
-    // 3. Line: Xu hướng 6 tháng
-    new Chart(document.getElementById('chart3'), {
-        type: 'line',
-        data: { labels: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6'], datasets: [{ label: 'Điểm TB', data: [7.2, 7.5, 7.8, 8.1, 8.0, 8.5], borderColor: '#3B82F6', tension: 0.4, fill: true, backgroundColor: 'rgba(59, 130, 246, 0.1)' }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
-    });
-
-    // 4. Bar (Horizontal): Top Tích cực
-    new Chart(document.getElementById('chart4'), {
-        type: 'bar',
-        data: { labels: ['Màu đẹp', 'Mịn lì', 'Thơm', 'Rẻ', 'Giao nhanh'], datasets: [{ label: 'Lượt nhắc', data: [450, 320, 210, 180, 150], backgroundColor: colorPos, borderRadius: 4 }] },
-        options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
-    });
-
-    // 5. Bar: Phân bổ sao
-    new Chart(document.getElementById('chart5'), {
-        type: 'bar',
-        data: { labels: ['5 Sao', '4 Sao', '3 Sao', '2 Sao', '1 Sao'], datasets: [{ label: '% Đánh giá', data: [65, 20, 8, 3, 4], backgroundColor: [colorPos, colorPos, colorNeu, colorNeg, colorNeg], borderRadius: 4 }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
-    });
-
-    // 6. Polar Area: Trọng số
-    new Chart(document.getElementById('chart6'), {
-        type: 'polarArea',
-        data: { labels: ['Giá', 'Mùi hương', 'Độ bền', 'Thiết kế'], datasets: [{ data: [11, 16, 7, 14], backgroundColor: ['#3B82F6', '#8B5CF6', '#EC4899', '#10B981'], borderWidth: 0 }] },
-        options: { responsive: true, maintainAspectRatio: false }
-    });
-
-    // 7. Line (Stepped): Lượng Review
-    new Chart(document.getElementById('chart7'), {
-        type: 'line',
-        data: { labels: ['Tuần 1', 'Tuần 2', 'Tuần 3', 'Tuần 4'], datasets: [{ label: 'Lượng Cào (Crawled)', data: [500, 1200, 2500, 3250], borderColor: '#EC4899', backgroundColor: 'rgba(236, 72, 153, 0.1)', fill: true, stepped: true }] },
-        options: { responsive: true, maintainAspectRatio: false }
-    });
-
-    // 8. Bar (Horizontal): Top Tiêu cực
-    new Chart(document.getElementById('chart8'), {
-        type: 'bar',
-        data: { labels: ['Nhanh trôi', 'Khô môi', 'Giao chậm', 'Thái độ tệ'], datasets: [{ label: 'Lượt nhắc', data: [120, 85, 40, 15], backgroundColor: colorNeg, borderRadius: 4 }] },
-        options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
-    });
-
-    // 9. Mixed: So sánh TB Ngành
-    new Chart(document.getElementById('chart9'), {
-        type: 'bar',
-        data: {
-            labels: ['Brand', 'Ngành'],
-            datasets: [{ type: 'bar', label: 'Điểm', data: [8.5, 7.2], backgroundColor: [colorBrand, '#4B5563'], borderRadius: 4 }]
-        },
-        options: { responsive: true, maintainAspectRatio: false }
-    });
-
-    // 10. Bar + Line: Tương quan
-    new Chart(document.getElementById('chart10'), {
-        type: 'bar',
-        data: {
-            labels: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6'],
-            datasets: [
-                { type: 'line', label: 'Tỉ lệ quay lại (%)', data: [40, 42, 45, 50, 52, 55], borderColor: '#10B981', tension: 0.3, yAxisID: 'y1' },
-                { type: 'bar', label: 'Review tích cực', data: [150, 180, 220, 300, 350, 400], backgroundColor: '#3B82F6', borderRadius: 4, yAxisID: 'y' }
-            ]
-        },
-        options: { responsive: true, maintainAspectRatio: false, scales: { y1: { position: 'right', grid: { drawOnChartArea: false } } } }
-    });
-</script>
 {% endblock %}

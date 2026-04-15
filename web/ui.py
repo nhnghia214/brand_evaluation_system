@@ -31,6 +31,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from web.schemas import AnalysisFormRequest
 
+
 # Load các biến môi trường từ file .env
 load_dotenv()
 
@@ -786,8 +787,10 @@ async def submit_analysis_request(req: AnalysisFormRequest, request: Request):
     registrar = BrandCategoryRegistrar()
     orchestrator = CrawlJobOrchestrator()
     resolver = BrandCategoryResolver()
+    
     ai_narrative = ""
     chart_data = None
+    is_ready = False # 🚀 CỜ MỚI: Mặc định là chưa có dữ liệu
     
     # ----------------------------------------------------
     # CHẾ ĐỘ 1: ĐÁNH GIÁ 1 THƯƠNG HIỆU
@@ -826,6 +829,7 @@ async def submit_analysis_request(req: AnalysisFormRequest, request: Request):
                 orchestrator.handle_decision(brand_id=brand_id, category_id=category_id, recommended_action="NEED_FULL_CRAWL")
                 ai_narrative = f"Dữ liệu của **{brand}** đang trong hàng đợi xử lý của các Agent. Vui lòng truy cập lại liên kết này sau ít giờ."
             else:
+                is_ready = True # 🚀 Đã có Data -> Bật cờ thành công
                 avg_score = round(sum(scores) / len(scores), 2)
                 avg_pos = sum(pos_rates) / len(pos_rates) if pos_rates else None
                 avg_neg = sum(neg_rates) / len(neg_rates) if neg_rates else None
@@ -878,7 +882,9 @@ async def submit_analysis_request(req: AnalysisFormRequest, request: Request):
 
             if len(brand_summaries) < 2:
                 ai_narrative = "Một số thương hiệu trong danh sách đang thiếu dữ liệu. Crawler đang ưu tiên xử lý. Vui lòng xem lại báo cáo này sau."
+                # Bỏ việc gán chart_data ở đây để tránh lỗi
             else:
+                is_ready = True # 🚀 Đã đủ 2 Brand -> Bật cờ thành công
                 fake_question = f"So sánh {', '.join(req.brands)}"
                 ai_narrative = compare_brands_with_llm(brand_summaries=brand_summaries, trend_info=trend_info, question=fake_question)
 
@@ -888,12 +894,13 @@ async def submit_analysis_request(req: AnalysisFormRequest, request: Request):
                     "total_reviews": [b["total_reviews"] for b in brand_summaries]
                 }
 
-    # LƯU KẾT QUẢ & GỬI EMAIL
+    # LƯU KẾT QUẢ VÀO CACHE & GỬI EMAIL
     REPORT_CACHE[report_id] = {
         "ai_narrative": ai_narrative,
         "brands": req.brands,
         "mode": req.mode,
-        "chart_data": chart_data if req.mode == "compare" else None
+        "chart_data": chart_data,
+        "is_ready": is_ready # LƯU CỜ VÀO BỘ NHỚ
     }
 
     send_evaluation_email(
@@ -910,23 +917,24 @@ async def submit_analysis_request(req: AnalysisFormRequest, request: Request):
 def view_report(request: Request, report_id: str):
     """Trang hiển thị Báo cáo Phân tích"""
     
-    # Rút dữ liệu thật từ Cache ra
     report_data = REPORT_CACHE.get(report_id)
     
     if not report_data:
-        # Nếu Cache bị mất (do restart server), hiển thị thông báo an toàn
         ai_narrative = "Báo cáo này đang được cập nhật hoặc phiên bản lưu trữ đã hết hạn. Vui lòng tạo yêu cầu mới tại trang chủ."
         chart_data = None
+        is_ready = False
     else:
         ai_narrative = report_data["ai_narrative"]
         chart_data = report_data.get("chart_data")
+        is_ready = report_data.get("is_ready", False) # 🚀 KÉO CỜ TỪ CACHE RA
 
     context = {
         "request": request,
         "report_id": report_id,
         "generated_date": datetime.now().strftime("%d/%m/%Y %H:%M"),
         "ai_narrative": ai_narrative,
-        "chart_data": chart_data
+        "chart_data": chart_data,
+        "is_ready": is_ready # 🚀 ĐẨY CỜ SANG GIAO DIỆN
     }
     
     return templates.TemplateResponse("report.jinja2", context)
