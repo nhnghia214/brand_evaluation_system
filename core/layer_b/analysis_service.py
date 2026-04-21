@@ -88,9 +88,9 @@ class AnalysisService:
         old_positive_rate = old_data[0] if old_data else 0.0
         old_total_evaluated = old_data[1] if old_data else 0
 
-        # 2. TÌM NHỮNG BÌNH LUẬN CHƯA PHÂN TÍCH (LẤY TOP 25 THEO LÔ)
+        # 2. TÌM NHỮNG BÌNH LUẬN CHƯA PHÂN TÍCH (LẤY TOP 5 THEO LÔ)
         cursor.execute("""
-            SELECT TOP 10 r.ReviewId, r.Comment FROM Review r
+            SELECT TOP 5 r.ReviewId, r.Comment FROM Review r
             JOIN Product p ON r.ProductId = p.ProductId
             WHERE p.BrandId = ? AND p.CategoryId = ?
             AND r.Comment IS NOT NULL

@@ -1,100 +1,84 @@
 {% extends "base.jinja2" %}
-{% block title %}Gia hạn Dịch vụ - Tiên Phong Tech{% endblock %}
+{% block title %}Cửa hàng Dịch vụ - Tiên Phong Tech{% endblock %}
 {% block content %}
-<div class="max-w-4xl mx-auto w-full px-6 py-12 relative z-10">
-    <h1 class="text-3xl font-extrabold text-white mb-2 text-center">Gia hạn Gói Dịch Vụ</h1>
-    <p class="text-gray-400 text-center mb-10">Chọn gói cước phù hợp với nhu cầu phân tích của bạn</p>
+<div class="max-w-6xl mx-auto w-full px-6 py-12 relative z-10">
+    <div class="text-center mb-10">
+        <h1 class="text-3xl font-extrabold text-white mb-2">Cửa hàng Dịch vụ AI</h1>
+        {% if user %}
+            <p class="text-gray-400">Số dư hiện tại: <span class="text-yellow-400 font-bold text-xl">{{ user.token }} Token </span> | Hạng: <span class="text-brand-light font-bold">{{ user.tier }}</span></p>
+        {% else %}
+            <p class="text-gray-400">Vui lòng <a href="/auth/login" class="text-brand-neon hover:underline font-bold">Đăng nhập</a> để nạp thêm Năng lượng vào tài khoản.</p>
+        {% endif %}
+    </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
-        <div class="bg-space-800 border-2 border-space-600 rounded-2xl p-6 cursor-pointer hover:border-blue-500 transition relative" onclick="selectPlan('BASIC', 50000)" id="card-BASIC">
-            <div class="absolute top-0 right-0 bg-space-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-lg">Tiêu chuẩn</div>
-            <h3 class="text-2xl font-bold text-white mb-2">Gói Thường</h3>
-            <div class="text-3xl font-extrabold text-blue-400 mb-4">50.000<span class="text-lg text-gray-400">đ/tháng</span></div>
-            <ul class="text-gray-300 space-y-2 mb-6">
-                <li class="flex items-center gap-2"><svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Yêu cầu đánh giá & So sánh</li>
-                <li class="flex items-center gap-2"><svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Nhận báo cáo AI qua Email</li>
-                <li class="flex items-center gap-2 opacity-50"><svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg> Không có biểu đồ phân tích</li>
-            </ul>
+    <h2 class="text-xl font-bold text-brand-light mb-6 border-l-4 border-brand-neon pl-3">Nạp Năng lượng (Token)</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        <div class="bg-space-800 border border-space-600 rounded-2xl p-6 hover:border-blue-500 transition flex flex-col">
+            <h3 class="text-xl font-bold text-white mb-2">Gói Khởi động</h3>
+            <div class="text-2xl font-extrabold text-blue-400 mb-2">50.000<span class="text-sm text-gray-400">đ</span></div>
+            <div class="text-yellow-400 font-bold mb-4">Nhận 50 Token</div>
+            <p class="text-gray-400 text-sm mb-6 flex-1">Đủ để đánh giá 5 thương hiệu.</p>
+            <button onclick="{% if user %}processCheckout('TOKEN_50'){% else %}window.location.href='/auth/login'{% endif %}" class="w-full bg-space-700 hover:bg-blue-600 text-white font-bold py-2 rounded-lg transition">
+                {% if user %}Mua ngay{% else %}Đăng nhập để Mua{% endif %}
+            </button>
+        </div>
+        
+        <div class="bg-space-800 border-2 border-brand-neon rounded-2xl p-6 relative shadow-[0_0_15px_rgba(139,92,246,0.2)] flex flex-col">
+            <div class="absolute -top-3 right-4 bg-brand-neon text-white text-xs font-bold px-3 py-1 rounded-full">Phổ biến</div>
+            <h3 class="text-xl font-bold text-white mb-2">Gói Tăng tốc</h3>
+            <div class="text-2xl font-extrabold text-brand-neon mb-2">100.000<span class="text-sm text-gray-400">đ</span></div>
+            <div class="text-yellow-400 font-bold mb-4">Nhận 120 Token (Tặng +20)</div>
+            <p class="text-gray-400 text-sm mb-6 flex-1">Đủ để đánh giá 12 thương hiệu.</p>
+            <button onclick="{% if user %}processCheckout('TOKEN_120'){% else %}window.location.href='/auth/login'{% endif %}" class="w-full bg-brand-neon hover:bg-purple-500 text-white font-bold py-2 rounded-lg transition">
+                {% if user %}Mua ngay{% else %}Đăng nhập để Mua{% endif %}
+            </button>
         </div>
 
-        <div class="bg-space-800 border-2 border-brand-neon rounded-2xl p-6 cursor-pointer hover:shadow-[0_0_20px_rgba(139,92,246,0.3)] transition relative" onclick="selectPlan('VIP', 100000)" id="card-VIP">
-            <div class="absolute top-0 right-0 bg-brand-neon text-white text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-lg">Khuyên dùng</div>
-            <h3 class="text-2xl font-bold text-white mb-2">Gói VIP</h3>
-            <div class="text-3xl font-extrabold text-brand-neon mb-4">100.000<span class="text-lg text-gray-400">đ/tháng</span></div>
-            <ul class="text-gray-300 space-y-2 mb-6">
-                <li class="flex items-center gap-2"><svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Mọi tính năng của gói Thường</li>
-                <li class="flex items-center gap-2"><svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Mở khóa 10 Biểu đồ kỹ thuật</li>
-                <li class="flex items-center gap-2"><svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Biểu đồ so sánh với Đối thủ</li>
-            </ul>
+        <div class="bg-space-800 border border-space-600 rounded-2xl p-6 hover:border-blue-500 transition relative">
+            <div class="absolute -top-3 right-4 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">Tiết kiệm nhất</div>
+            <h3 class="text-xl font-bold text-white mb-2">Gói Chuyên gia</h3>
+            <div class="text-2xl font-extrabold text-green-400 mb-2">200.000<span class="text-sm text-gray-400">đ</span></div>
+            <div class="text-yellow-400 font-bold mb-4">Nhận 280 Token (Tặng +80)</div>
+            <p class="text-gray-400 text-sm mb-6 flex-1">Lựa chọn số 1 cho các Agency.</p>
+            <button onclick="{% if user %}processCheckout('TOKEN_280'){% else %}window.location.href='/auth/login'{% endif %}" class="w-full bg-space-700 hover:bg-green-600 text-white font-bold py-2 rounded-lg transition">
+                {% if user %}Mua ngay{% else %}Đăng nhập để Mua{% endif %}
+            </button>
         </div>
     </div>
 
-    <div class="bg-space-900 border border-space-700 rounded-xl p-6 max-w-2xl mx-auto shadow-lg">
-        <h4 class="text-lg font-bold text-white mb-4 border-b border-space-700 pb-2">Thông tin hóa đơn tạm tính</h4>
-        <div class="flex justify-between text-gray-300 mb-2"><span>Tài khoản:</span> <b>{{ user.email }}</b></div>
-        <div class="flex justify-between text-gray-300 mb-2"><span>Gói đã chọn:</span> <b id="summary-plan" class="text-brand-neon">Gói VIP</b></div>
-        <div class="flex justify-between text-gray-300 mb-2"><span>Thời gian hiệu lực:</span> <b>{{ start_date }} - {{ end_date }} (30 ngày)</b></div>
-        <div class="flex justify-between text-xl font-bold text-white mt-4 pt-4 border-t border-space-700">
-            <span>Tổng thanh toán:</span> <span id="summary-price" class="text-green-400">100.000 đ</span>
+    <h2 class="text-xl font-bold text-brand-light mb-6 border-l-4 border-yellow-500 pl-3">Dịch vụ Nâng cao</h2>
+    <div class="bg-gradient-to-r from-space-800 to-space-900 border border-yellow-500/50 rounded-2xl p-8 flex flex-col md:flex-row justify-between items-center shadow-lg">
+        <div>
+            <h3 class="text-2xl font-bold text-yellow-400 mb-2">Gói VIP (Mở khóa Biểu đồ)</h3>
+            <p class="text-gray-300 max-w-lg mb-2">Cho phép xem toàn bộ 11 biểu đồ phân tích kỹ thuật và dữ liệu đối thủ cạnh tranh trên trang Báo cáo phân tích.</p>
+            <p class="text-sm text-gray-500 italic">* Yêu cầu phải có Token để thực hiện lệnh AI.</p>
         </div>
-        
-        <button id="btnCheckout" onclick="processCheckout()" class="w-full mt-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-3 px-4 rounded-lg transition text-lg flex items-center justify-center gap-2">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
-            Thanh toán qua PayOS
-        </button>
+        <div class="text-right mt-6 md:mt-0">
+            <div class="text-3xl font-extrabold text-white mb-4">100.000<span class="text-lg text-gray-400">đ/30 ngày</span></div>
+            <button onclick="{% if user %}processCheckout('VIP_30'){% else %}window.location.href='/auth/login'{% endif %}" class="bg-yellow-500 hover:bg-yellow-400 text-space-900 font-extrabold py-3 px-8 rounded-full shadow-[0_0_15px_rgba(234,179,8,0.3)] transition transform hover:scale-105">
+                {% if user %}Nâng cấp VIP ngay{% else %}Đăng nhập để Nâng cấp{% endif %}
+            </button>
+        </div>
     </div>
 </div>
 
+{% if user %}
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-    let selectedPlan = 'VIP'; // Mặc định
-
-    function selectPlan(plan, price) {
-        selectedPlan = plan;
-        // Reset border
-        document.getElementById('card-BASIC').className = "bg-space-800 border-2 border-space-600 rounded-2xl p-6 cursor-pointer hover:border-blue-500 transition relative";
-        document.getElementById('card-VIP').className = "bg-space-800 border-2 border-space-600 rounded-2xl p-6 cursor-pointer hover:border-brand-neon transition relative";
-        
-        // Highlight selected
-        if (plan === 'BASIC') {
-            document.getElementById('card-BASIC').classList.replace('border-space-600', 'border-blue-500');
-            document.getElementById('summary-plan').innerHTML = 'Gói Thường';
-            document.getElementById('summary-plan').className = 'text-blue-400';
-            document.getElementById('summary-price').innerHTML = '50.000 đ';
-        } else {
-            document.getElementById('card-VIP').classList.replace('border-space-600', 'border-brand-neon');
-            document.getElementById('card-VIP').classList.add('shadow-[0_0_20px_rgba(139,92,246,0.3)]');
-            document.getElementById('summary-plan').innerHTML = 'Gói VIP';
-            document.getElementById('summary-plan').className = 'text-brand-neon';
-            document.getElementById('summary-price').innerHTML = '100.000 đ';
-        }
-    }
-
-    async function processCheckout() {
-        const btn = document.getElementById('btnCheckout');
-        btn.disabled = true;
-        btn.innerHTML = 'Đang khởi tạo cổng thanh toán...';
-
+    async function processCheckout(planCode) {
+        Swal.fire({ title: 'Đang tạo đơn hàng...', background: '#1F2937', color: '#fff', didOpen: () => { Swal.showLoading() }});
         try {
             const res = await fetch('/api/create-payment-link', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ plan: selectedPlan })
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ plan: planCode })
             });
             const data = await res.json();
-            
-            if (data.status === 'success') {
-                window.location.href = data.checkoutUrl; // Chuyển hướng sang PayOS
-            } else {
-                Swal.fire({ icon: 'error', title: 'Lỗi', text: data.message, background: '#1F2937', color: '#fff' });
-                btn.disabled = false;
-                btn.innerHTML = 'Thanh toán qua PayOS';
-            }
+            if (data.status === 'success') window.location.href = data.checkoutUrl;
+            else Swal.fire({ icon: 'error', title: 'Lỗi', text: data.message, background: '#1F2937', color: '#fff' });
         } catch (err) {
-            Swal.fire({ icon: 'error', title: 'Lỗi hệ thống', text: 'Vui lòng thử lại sau.', background: '#1F2937', color: '#fff' });
-            btn.disabled = false;
-            btn.innerHTML = 'Thanh toán qua PayOS';
+            Swal.fire({ icon: 'error', title: 'Lỗi mạng', background: '#1F2937', color: '#fff' });
         }
     }
 </script>
+{% endif %}
 {% endblock %}

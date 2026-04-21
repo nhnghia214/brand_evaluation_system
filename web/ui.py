@@ -145,13 +145,32 @@ def create_access_token(data: dict):
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 def get_current_user(request: Request):
-    """Lấy thông tin User từ Cookie của Request"""
+    """Lấy thông tin User từ Cookie và đối chiếu Database để lấy Token/Tier"""
     token = request.cookies.get("access_token")
-    if not token:
-        return None
+    if not token: return None
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        return payload # Trả về dict: {"sub": "id", "role": "user/admin", "name": "..."}
+        # 🚀 ĐỌC DB ĐỂ LẤY SỐ DƯ TOKEN VÀ GÓI VIP THỰC TẾ
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT Goi_DichVu, So_Token, Ngay_HetHan FROM NguoiDung WHERE Email = ?", (payload["email"],))
+        db_info = cursor.fetchone()
+        
+        if db_info:
+            tier = db_info.Goi_DichVu
+            # Nếu VIP hết hạn -> Tự động rớt xuống BASIC
+            if tier == 'VIP' and db_info.Ngay_HetHan and datetime.now() > db_info.Ngay_HetHan:
+                tier = 'BASIC'
+                
+            payload["tier"] = tier
+            payload["token"] = db_info.So_Token or 0
+            
+            # Ghi đè vô hạn cho Admin
+            if payload["email"] == "nhoangnghia2104@gmail.com":
+                payload["tier"] = 'VIP'
+                payload["token"] = 9999
+        conn.close()
+        return payload
     except jwt.PyJWTError:
         return None
 
@@ -745,53 +764,47 @@ async def submit_analysis_request(req: AnalysisFormRequest, request: Request):
     cursor = conn.cursor()
 
     try:
-        # 🚀 1. LẤY THÊM THÔNG TIN GÓI VÀ NGÀY HẾT HẠN
-        cursor.execute("SELECT Da_Khoa, Goi_DichVu, Ngay_HetHan FROM NguoiDung WHERE Email = ?", (email,))
+        # 1. LẤY THÔNG TIN USER (THÊM SỐ TOKEN)
+        cursor.execute("SELECT Da_Khoa, Goi_DichVu, Ngay_HetHan, So_Token FROM NguoiDung WHERE Email = ?", (email,))
         user_db = cursor.fetchone()
-        
-        # Xác định Admin
         is_admin = (email == "nhoangnghia2104@gmail.com")
 
         if not user_db:
-            # Tặng 7 ngày dùng thử cho User mới (Hoặc VIP vĩnh viễn cho Admin)
+            # QUÀ TÂN THỦ: 20 Token + VIP 2 Ngày
             ngay_tao = datetime.now()
-            
             if is_admin:
-                goi_dich_vu = 'VIP'
-                ngay_het_han = None # Admin không bao giờ hết hạn
+                goi_dich_vu, tokens, ngay_het_han = 'VIP', 9999, None
             else:
-                goi_dich_vu = 'TRIAL'
-                ngay_het_han = ngay_tao + timedelta(days=7)
-
+                goi_dich_vu, tokens, ngay_het_han = 'VIP', 20, ngay_tao + timedelta(days=2)
+                
             cursor.execute("""
-                INSERT INTO NguoiDung (Email, HoTen, Da_Khoa, NgayTao, Goi_DichVu, Ngay_KichHoat, Ngay_HetHan) 
-                VALUES (?, ?, 0, ?, ?, ?, ?)
-            """, (email, full_name, ngay_tao, ngay_tao, goi_dich_vu, ngay_tao, ngay_het_han))
+                INSERT INTO NguoiDung (Email, HoTen, Da_Khoa, NgayTao, Goi_DichVu, Ngay_KichHoat, Ngay_HetHan, So_Token) 
+                VALUES (?, ?, 0, ?, ?, ?, ?, ?)
+            """, (email, full_name, ngay_tao, ngay_tao, goi_dich_vu, ngay_tao, ngay_het_han, tokens))
             conn.commit()
-            
-            is_locked = False
-            user_tier = goi_dich_vu
+            is_locked, user_tier = False, goi_dich_vu
         else:
             is_locked = bool(user_db.Da_Khoa)
-            user_tier = user_db.Goi_DichVu
+            user_tier = 'VIP' if is_admin else user_db.Goi_DichVu
+            tokens = 9999 if is_admin else (user_db.So_Token or 0)
             
-            # 🚀 Ghi đè quyền VIP cho Admin phòng trường hợp DB bị sai sót
-            if is_admin:
-                user_tier = 'VIP'
+            # Xử lý rớt hạng VIP
+            if not is_admin and user_tier == 'VIP' and user_db.Ngay_HetHan and datetime.now() > user_db.Ngay_HetHan:
+                user_tier = 'BASIC'
 
-            # 🚀 2. CHẶN NẾU GÓI DỊCH VỤ HẾT HẠN (Admin thì luôn được bypass)
-            if not is_admin and user_db.Ngay_HetHan and datetime.now() > user_db.Ngay_HetHan:
-                return {
-                    "status": "expired", 
-                    "tier": user_tier,
-                    "message": f"Quý khách hàng vừa hết hiệu lực gói {user_tier}. Vui lòng gia hạn để sử dụng dịch vụ bên chúng tôi."
-                }
-
-        # 3. CHẶN NẾU TÀI KHOẢN ĐÃ BỊ KHÓA
+        # 2. CHẶN KHÓA TÀI KHOẢN (Giữ nguyên)
         if is_locked:
-            return {"status": "error", "message": "Tài khoản của bạn đã bị khóa do vi phạm nhiều lần. Vui lòng kiểm tra email để khiếu nại."}
+            return {"status": "error", "message": "Tài khoản của bạn đã bị khóa do vi phạm nhiều lần."}
 
-        # 4. GỌI MODERATOR AGENT KIỂM DUYỆT YÊU CẦU
+        # 3. TÍNH TOÁN VÀ TRỪ TOKEN (1 Thương hiệu = 10 Token)
+        tokens_needed = len(req.brands) * 10
+        if tokens < tokens_needed:
+            return {
+                "status": "out_of_token", 
+                "message": f"Nhiệm vụ này cần {tokens_needed} Token. Số dư của bạn là {tokens}. Vui lòng nạp thêm năng lượng!"
+            }
+        
+        # Gọi Moderator Kiểm duyệt (Giữ nguyên)
         is_valid, reason = await check_request_validity(req.brands)
         ai_status = "Hợp lệ" if is_valid else "Vi phạm"
 
@@ -815,9 +828,15 @@ async def submit_analysis_request(req: AnalysisFormRequest, request: Request):
                 return {"status": "error", "message": f"Yêu cầu chứa nội dung không hợp lệ. Tài khoản đã bị khóa do vi phạm {spam_count} lần."}
             
             return {"status": "error", "message": f"Yêu cầu bị từ chối (Lý do: {reason}). Cảnh báo vi phạm lần {spam_count}/3."}
+        
+        # 7. TRỪ TOKEN NẾU HỢP LỆ VÀ ĐI TIẾP
+        if not is_admin and is_valid:
+            cursor.execute("UPDATE NguoiDung SET So_Token = So_Token - ? WHERE Email = ?", (tokens_needed, email))
+            conn.commit()
 
     except Exception as e:
         print(f"Lỗi DB ở Submit Request: {e}")
+        return {"status": "error", "message": "Hệ thống đang quá tải hoặc lỗi cơ sở dữ liệu. Vui lòng thử lại sau!"}
     finally:
         conn.close()
 
@@ -956,7 +975,7 @@ async def submit_analysis_request(req: AnalysisFormRequest, request: Request):
                     "total_reviews": [b["total_reviews"] for b in brand_summaries]
                 }
 
-    # 🚀 LƯU VÀO CACHE: THÊM TIER VÀ DỮ LIỆU ĐỐI THỦ
+    # LƯU VÀO CACHE: THÊM TIER VÀ DỮ LIỆU ĐỐI THỦ
     REPORT_CACHE[report_id] = {
         "ai_narrative": ai_narrative,
         "brands": req.brands,
@@ -1110,8 +1129,9 @@ def submit_appeal_api(req: AppealSubmit):
 def checkout_page(request: Request):
     """Trang chọn gói và thanh toán"""
     user = get_current_user(request)
-    if not user:
-        return RedirectResponse(url="/", status_code=303)
+
+    # if not user: Comment để KHÁCH ĐƯỢC VÀO XEM BẢNG GIÁ
+    #     return RedirectResponse(url="/", status_code=303)
     
     # Tính ngày bắt đầu và kết thúc để hiển thị
     start_date = datetime.now()
@@ -1141,27 +1161,42 @@ def create_payment_link(req: CheckoutRequest, request: Request):
     if not user:
         raise HTTPException(status_code=401, detail="Chưa đăng nhập")
 
-    # Định giá gói cước
-    amount = 50000 if req.plan == 'BASIC' else 100000
-    plan_name = "Gói Thường (Basic)" if req.plan == 'BASIC' else "Gói VIP"
+    # 🚀 1. ĐỊNH GIÁ GÓI CƯỚC THEO MÔ HÌNH MỚI (TOKEN & VIP)
+    if req.plan == 'TOKEN_50':
+        amount = 50000
+        plan_name = "Nap 50 Token"
+        desc_plan = "T50"
+    elif req.plan == 'TOKEN_120':
+        amount = 100000
+        plan_name = "Nap 120 Token"
+        desc_plan = "T120"
+    elif req.plan == 'TOKEN_280':
+        amount = 200000
+        plan_name = "Nap 280 Token"
+        desc_plan = "T280"
+    else:
+        # Trường hợp req.plan == 'VIP_30'
+        amount = 100000
+        plan_name = "Gia han VIP (30 Ngay)"
+        desc_plan = "VIP"
     
     # Tạo mã đơn hàng duy nhất (Dùng timestamp integer)
     order_code = int(time.time() * 1000)
 
-    # 🚀 XỬ LÝ RÚT GỌN NỘI DUNG (DƯỚI 25 KÝ TỰ)
+    # 🚀 2. XỬ LÝ RÚT GỌN NỘI DUNG (DƯỚI 25 KÝ TỰ)
     now = datetime.now()
     clean_name = shorten_name(user.get("name", "Khach"))
     date_str = now.strftime("%d%m") # Lấy NgàyTháng (ví dụ 1504)
     
-    # Tạo chuỗi nội dung: "Hoàng Nghĩa 1504 GH VIP"
-    description = f"{clean_name} {date_str} GH {req.plan}"
+    # Tạo chuỗi nội dung: "Hoàng Nghĩa 1504 T120" (Rất ngắn gọn và an toàn)
+    description = f"{clean_name} {date_str} {desc_plan}"
 
     # Kiểm tra cuối cùng trước khi gửi sang PayOS
     if len(description) > 25:
         # Nếu vẫn dài, chỉ lấy tên chính và ngày
-        description = f"{clean_name.split()[-1]} {date_str} GH {req.plan}"
+        description = f"{clean_name.split()[-1]} {date_str} {desc_plan}"
 
-    # Lưu đơn hàng vào Database (Trạng thái PENDING)
+    # 3. LƯU ĐƠN HÀNG VÀO DATABASE
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("""
@@ -1171,8 +1206,8 @@ def create_payment_link(req: CheckoutRequest, request: Request):
     conn.commit()
     conn.close()
 
-    # Cấu hình PayOS chuẩn từ payos.type
-    item = ItemData(name=f"Gia han {plan_name} 30 ngay", quantity=1, price=amount)
+    # 4. CẤU HÌNH PAYOS
+    item = ItemData(name=plan_name, quantity=1, price=amount)
     
     # THỰC TẾ: domain phải là domain thật (hoặc ngrok) để PayOS redirect về. 
     # Tạm thời dùng localhost cho luồng test.
@@ -1216,17 +1251,20 @@ async def payos_webhook(request: Request):
             order = cursor.fetchone()
             
             if order:
-                # 1. Cập nhật trạng thái đơn hàng
                 cursor.execute("UPDATE DonHang SET TrangThai = 'SUCCESS' WHERE MaDon = ?", (order_code,))
-                
-                # 2. Cập nhật quyền lợi người dùng
                 now = datetime.now()
-                end_date = now + timedelta(days=30)
-                cursor.execute("""
-                    UPDATE NguoiDung 
-                    SET Goi_DichVu = ?, Ngay_KichHoat = ?, Ngay_HetHan = ? 
-                    WHERE Email = ?
-                """, (order.Goi_DichVu, now, end_date, order.Email))
+                
+                # KIỂM TRA MUA TOKEN HAY MUA VIP
+                if order.Goi_DichVu.startswith('TOKEN'):
+                    tokens_to_add = int(order.Goi_DichVu.split('_')[1])
+                    cursor.execute("UPDATE NguoiDung SET So_Token = So_Token + ? WHERE Email = ?", (tokens_to_add, order.Email))
+                    plan_label = f"Nạp {tokens_to_add} Token"
+                    start_str, end_str = "Sử dụng vĩnh viễn", ""
+                else:
+                    end_date = now + timedelta(days=30)
+                    cursor.execute("UPDATE NguoiDung SET Goi_DichVu = 'VIP', Ngay_KichHoat = ?, Ngay_HetHan = ? WHERE Email = ?", (now, end_date, order.Email))
+                    plan_label = "Gia hạn VIP (30 Ngày)"
+                    start_str, end_str = now.strftime("%d/%m/%Y"), end_date.strftime("%d/%m/%Y")
                 
                 conn.commit()
                 
@@ -1403,3 +1441,30 @@ def send_invoice_email(to_email, full_name, order_code, plan_name, amount, start
         print(f"[Email Success] Đã gửi hóa đơn cho {to_email}")
     except Exception as e:
         print(f"[Email Error] Không thể gửi mail: {e}")
+
+# ==========================================
+# CÁC TRANG WEB TĨNH (STATIC PAGES)
+# ==========================================
+@router.get("/page/{page_name}", response_class=HTMLResponse)
+def static_pages(request: Request, page_name: str):
+    """Render các trang tĩnh (Câu chuyện, Liên hệ, FAQ, Điều khoản)"""
+    user = get_current_user(request)
+    
+    # Map tên URL với tên file .jinja2 tương ứng
+    valid_pages = {
+        "cau-chuyen": "story.jinja2",
+        "lien-he": "contact.jinja2",
+        "dieu-khoan": "terms.jinja2",
+        "faq": "faq.jinja2"
+    }
+    
+    template_file = valid_pages.get(page_name)
+    if not template_file:
+        # Nếu nhập sai tên trang, ném về trang chủ
+        return RedirectResponse(url="/")
+        
+    return templates.TemplateResponse(template_file, {
+        "request": request, 
+        "user": user,
+        "current_date": datetime.now().strftime("%d/%m/%Y")
+    })
