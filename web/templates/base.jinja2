@@ -19,30 +19,72 @@
             }
         }
     </script>
+    <style>
+        html {
+            scroll-behavior: smooth;
+        }
+    </style>
 </head>
 <body class="bg-space-900 text-white font-sans antialiased selection:bg-brand-neon selection:text-white flex flex-col min-h-screen">
 
     {% block header %}
     <header class="border-b border-space-700/50 backdrop-blur-md sticky top-0 w-full z-50 bg-space-900/80">
-        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between relative">
             <a href="/" class="text-xl font-bold tracking-tighter flex items-center gap-2">
                 <span class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg text-sm">AI</span>
                 BrandAgent
             </a>
             
-            <nav class="flex gap-4 items-center">
-                {% if user %}
-                    <span class="text-sm font-medium text-brand-light hidden md:block">Xin chào, {{ user.name }}</span>
-                    {% if user.role == 'admin' %}
-                        <a href="/admin" class="text-sm text-gray-400 hover:text-white transition px-3 py-2 border-l border-space-700">Admin Panel</a>
+            <nav class="flex gap-6 items-center w-full justify-end lg:justify-between ml-8">
+                <div class="hidden lg:flex gap-6 border-r border-space-700 pr-6 absolute left-1/2 -translate-x-1/2">
+                    <a href="/#features" class="text-sm font-medium text-gray-400 hover:text-brand-light transition">Tính năng</a>
+                    <a href="/#how-it-works" class="text-sm font-medium text-gray-400 hover:text-brand-light transition">Hướng dẫn</a>
+                    <a href="/#about-us" class="text-sm font-medium text-gray-400 hover:text-brand-light transition">Về chúng tôi</a>
+                </div>
+
+                <div class="flex items-center gap-4 ml-auto">
+                    {% if user %}
+                        <div class="flex items-center gap-3 bg-space-800 border border-space-700 px-3 py-1.5 rounded-full hidden md:flex">
+                            <span class="text-sm font-medium text-brand-light border-r border-space-600 pr-3">
+                                Xin chào, {{ user.name }}
+                            </span>
+                            
+                            <div class="flex items-center gap-2 border-r border-space-600 pr-3">
+                                <span class="text-yellow-400 font-bold text-sm flex items-center gap-1" title="Số dư Token">
+                                    {{ user.token }} Token
+                                </span>
+                                
+                                <a href="/checkout" class="bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 text-[10px] px-2 py-0.5 rounded border border-yellow-500/20 transition-all font-bold uppercase tracking-wider flex items-center gap-1">
+                                    <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path>
+                                    </svg>
+                                    Nạp
+                                </a>
+                            </div>
+
+                            <span class="text-xs font-bold px-2 py-0.5 rounded-md {% if user.tier == 'VIP' %}bg-brand-neon/20 text-brand-light border border-brand-neon/30{% else %}bg-gray-700 text-gray-300{% endif %}">
+                                {{ user.tier }}
+                            </span>
+                        </div>
+                        
+                        {% if user.role == 'admin' %}
+                            <a href="/admin" class="text-sm text-gray-400 hover:text-white transition px-3 py-2 border-l border-space-700">Admin Panel</a>
+                        {% else %}
+                            <a href="/dashboard" class="text-sm text-gray-400 hover:text-white transition px-3 py-2 border-l border-space-700">Dashboard</a>
+                        {% endif %}
+                        
+                        <a href="/auth/logout" class="bg-red-500/10 hover:bg-red-500/20 text-red-400 px-5 py-2 rounded-full text-sm font-medium transition backdrop-blur-sm border border-red-500/10 ml-2">
+                            Logout
+                        </a>
                     {% else %}
-                        <a href="/dashboard" class="text-sm text-gray-400 hover:text-white transition px-3 py-2 border-l border-space-700">Dashboard</a>
+                        <a href="/auth/login" class="text-sm font-bold text-gray-300 hover:text-white transition px-4 py-2">
+                            Đăng nhập
+                        </a>
+                        <a href="/auth/login" class="bg-brand-neon hover:bg-purple-500 text-white text-sm font-bold py-2 px-6 rounded-full shadow-[0_0_15px_rgba(139,92,246,0.4)] transition transform hover:scale-105">
+                            Bắt đầu ngay
+                        </a>
                     {% endif %}
-                    <a href="/auth/logout" class="bg-red-500/10 hover:bg-red-500/20 text-red-400 px-5 py-2 rounded-full text-sm font-medium transition backdrop-blur-sm border border-red-500/10 ml-2">
-                        Logout
-                    </a>
-                {% else %}
-                    {% endif %}
+                </div>
             </nav>
         </div>
     </header>
@@ -51,6 +93,41 @@
     <main class="flex-1 flex flex-col">
         {% block content %}{% endblock %}
     </main>
+
+    <footer class="bg-[#080B13] border-t border-space-800 py-10 px-6 mt-auto w-full relative z-20">
+        <div class="max-w-7xl mx-auto flex flex-col items-center">
+            <div class="flex items-center gap-4 mb-6">
+                <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 rounded bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-[10px] text-white shadow-lg">AI</div>
+                    <span class="font-bold text-brand-light text-base tracking-tight">BrandAgent</span>
+                </div>
+                <span class="text-space-700">|</span>
+                <span class="text-gray-500 text-sm">© 2026 Công nghệ AI · <span class="text-red-500 font-bold text-xs">BETA</span></span>
+            </div>
+
+            <div class="flex flex-col items-center gap-4 text-sm text-gray-400 font-medium w-full">
+                <div class="flex flex-wrap justify-center gap-x-8 gap-y-3">
+                    <a href="/#features" class="hover:text-white transition">Tính năng</a>
+                    <a href="/page/cau-chuyen" class="hover:text-white transition">Câu chuyện BrandAgent</a>
+                    <a href="/page/lien-he" class="hover:text-white transition">Liên hệ hỗ trợ & Về đội ngũ</a>
+                    <a href="/page/dieu-khoan" class="hover:text-white transition">Điều khoản dịch vụ & Chính sách bảo mật</a>
+                </div>
+                <div class="flex flex-wrap justify-center gap-x-8 gap-y-3">
+                    <a href="/page/faq" class="hover:text-white transition">Câu hỏi thường gặp</a>
+                    <a href="/checkout" class="hover:text-white transition text-brand-light">Bảng giá & Gói hội viên cao cấp</a>
+                </div>
+                {% if not user %}
+                <div class="mt-2">
+                    <a href="/auth/login" class="text-brand-neon hover:text-purple-400 font-bold transition">Đăng nhập</a>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="text-center text-xs text-gray-600 mt-10 italic border-t border-space-800/50 pt-6 w-full max-w-3xl">
+                Hệ thống đang trong giai đoạn thử nghiệm (Beta). Mọi giao dịch phục vụ mục đích trải nghiệm công nghệ.
+            </div>
+        </div>
+    </footer>
 
 </body>
 </html>

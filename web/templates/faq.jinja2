@@ -1,0 +1,62 @@
+{% extends "base.jinja2" %}
+{% block title %}Câu hỏi thường gặp - Tiên Phong Tech{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-6 py-20 relative z-10">
+    <div class="text-center mb-16">
+        <h1 class="text-4xl md:text-5xl font-extrabold text-white mb-4">Câu hỏi thường gặp</h1>
+        <p class="text-gray-400 text-lg">Tìm hiểu cách hệ thống AI Đa tác tử của chúng tôi vận hành.</p>
+    </div>
+
+    <div class="space-y-4">
+        <div class="bg-space-800 border border-space-700 rounded-xl p-6">
+            <h3 class="text-lg font-bold text-blue-400 mb-2 flex items-start gap-3">
+                <span class="text-2xl font-black">Q.</span> 
+                Mất bao lâu để hệ thống xuất ra Báo cáo phân tích?
+            </h3>
+            <p class="text-gray-300 pl-8 leading-relaxed">
+                Tùy thuộc vào dữ liệu. Nếu thương hiệu bạn tra cứu <strong>đã từng được phân tích trước đó</strong>, báo cáo sẽ hiện ra ngay lập tức trong 2 giây. <br>
+                Nếu đây là thương hiệu <strong>hoàn toàn mới</strong>, hệ thống sẽ đưa vào hàng đợi để bot đi cào dữ liệu. Quá trình cào hàng ngàn bình luận và chạy qua AI để chấm điểm có thể mất từ <strong>24h đến 48h</strong>.
+            </p>
+        </div>
+
+        <div class="bg-space-800 border border-space-700 rounded-xl p-6">
+            <h3 class="text-lg font-bold text-blue-400 mb-2 flex items-start gap-3">
+                <span class="text-2xl font-black">Q.</span> 
+                Token hoạt động như thế nào? Mỗi lần phân tích tốn bao nhiêu Token?
+            </h3>
+            <p class="text-gray-300 pl-8 leading-relaxed">
+                Hệ thống tính phí dựa trên khối lượng công việc của AI. Việc <strong>Đánh giá 1 thương hiệu</strong> sẽ tiêu tốn <strong>10 Token</strong>. Nếu bạn dùng chế độ <strong>So sánh (VD: So sánh 3 thương hiệu)</strong>, hệ thống sẽ trừ 30 Token.
+            </p>
+        </div>
+
+        <div class="bg-space-800 border border-space-700 rounded-xl p-6">
+            <h3 class="text-lg font-bold text-blue-400 mb-2 flex items-start gap-3">
+                <span class="text-2xl font-black">Q.</span> 
+                Gói VIP khác gì so với Gói BASIC (Thường)?
+            </h3>
+            <p class="text-gray-300 pl-8 leading-relaxed">
+                Khi sử dụng gói BASIC, bạn chỉ đọc được kết luận đánh giá bằng văn bản của AI. Khi đăng ký <strong>Gói VIP</strong>, nền tảng sẽ mở khóa toàn bộ khối Dashboard phía dưới, bao gồm 11 biểu đồ phân tích kỹ thuật chuyên sâu, tỷ lệ cảm xúc, và đặc biệt là bảng xếp hạng so sánh với các đối thủ cạnh tranh cùng ngành.
+            </p>
+        </div>
+
+        <div class="bg-space-800 border border-space-700 rounded-xl p-6">
+            <h3 class="text-lg font-bold text-blue-400 mb-2 flex items-start gap-3">
+                <span class="text-2xl font-black">Q.</span> 
+                Tôi nạp tiền qua PayOS, bao lâu thì nhận được Token?
+            </h3>
+            <p class="text-gray-300 pl-8 leading-relaxed">
+                Hệ thống thanh toán của chúng tôi tích hợp Webhook tự động 100%. Ngay khi bạn quét mã QR và ngân hàng báo trừ tiền, Token sẽ được cộng vào tài khoản và Hóa đơn điện tử sẽ được gửi về Email của bạn ngay lập tức.
+            </p>
+        </div>
+    </div>
+
+    <div class="mt-12 bg-[#0A101D] border border-space-700 p-8 rounded-2xl text-center">
+        <h3 class="text-xl font-bold text-white mb-2">Vẫn còn thắc mắc khác?</h3>
+        <p class="text-gray-400 mb-6 text-sm">Đội ngũ phát triển của chúng tôi luôn sẵn sàng hỗ trợ bạn.</p>
+        <a href="/page/lien-he" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-8 rounded-lg transition">
+            Liên hệ ngay
+        </a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends "base.jinja2" %}
+{% block title %}Câu chuyện BrandAgent - Tiên Phong Tech{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-6 py-20 relative z-10">
+    <div class="text-center mb-16">
+        <h1 class="text-4xl md:text-5xl font-extrabold text-white mb-4">Câu chuyện đằng sau <span class="text-brand-neon">BrandAgent</span></h1>
+        <p class="text-gray-400 text-lg">Từ đồ án khóa luận đến giải pháp thực tiễn cho Doanh nghiệp.</p>
+    </div>
+
+    <div class="space-y-8">
+        <div class="bg-space-800/50 border border-space-700 p-8 rounded-2xl hover:border-yellow-500/50 transition">
+            <h3 class="text-xl font-bold text-yellow-400 mb-3 flex items-center gap-2">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                Vấn đề của Thị trường
+            </h3>
+            <p class="text-gray-300 leading-relaxed">
+                Trong kỷ nguyên Thương mại điện tử, uy tín của một thương hiệu được quyết định bởi hàng ngàn bình luận từ người mua. Tuy nhiên, các chủ shop và marketer đang chìm ngập trong "biển" dữ liệu này. Việc đọc thủ công từng đánh giá để phân tích cảm xúc khách hàng là bất khả thi, chưa kể đến vấn nạn "seeding" (đánh giá giả) làm sai lệch bức tranh toàn cảnh.
+            </p>
+        </div>
+
+        <div class="bg-space-800/50 border border-space-700 p-8 rounded-2xl hover:border-brand-neon/50 transition">
+            <h3 class="text-xl font-bold text-brand-neon mb-3 flex items-center gap-2">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                Giải pháp BrandAgent
+            </h3>
+            <p class="text-gray-300 leading-relaxed">
+                Được phát triển như một dự án nghiên cứu chuyên sâu, BrandAgent ứng dụng kiến trúc <strong>Trí tuệ nhân tạo Đa tác tử (Multi-Agent AI)</strong>. Hệ thống tự động hóa toàn bộ quy trình: từ việc "cào" dữ liệu tốc độ cao trên Shopee, làm sạch đánh giá rác bằng Groq AI, cho đến việc phân tích sắc thái ngôn ngữ tự nhiên bằng các mô hình LLMs hàng đầu. Chỉ với vài cú click, bức tranh uy tín thương hiệu được phác họa rõ nét.
+            </p>
+        </div>
+
+        <div class="bg-space-800/50 border border-space-700 p-8 rounded-2xl hover:border-blue-500/50 transition">
+            <h3 class="text-xl font-bold text-blue-400 mb-3 flex items-center gap-2">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                Tầm nhìn của chúng tôi
+            </h3>
+            <p class="text-gray-300 leading-relaxed">
+                Chúng tôi tin rằng, dữ liệu không chỉ dành cho các tập đoàn lớn. BrandAgent hướng đến việc dân chủ hóa dữ liệu (Data Democratization), mang đến một công cụ phân tích thị trường mạnh mẽ, trực quan và chi phí tối ưu cho mọi cá nhân và doanh nghiệp vừa và nhỏ tại Việt Nam.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

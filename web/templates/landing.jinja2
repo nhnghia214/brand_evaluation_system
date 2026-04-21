@@ -1,26 +1,169 @@
 {% extends "base.jinja2" %}
-
-{% block title %}Trang chủ - AI Brand Evaluator{% endblock %}
+{% block title %}BrandAgent - Đánh giá uy tín thương hiệu bằng AI{% endblock %}
 
 {% block content %}
-<div class="relative flex-1 flex flex-col justify-center items-center pt-20 pb-32 overflow-hidden">
+<style>
+    /* Trạng thái ban đầu (Ẩn và lệch vị trí) */
+    .reveal-left { opacity: 0; transform: translateX(-80px); transition: all 0.8s cubic-bezier(0.5, 0, 0, 1); }
+    .reveal-right { opacity: 0; transform: translateX(80px); transition: all 0.8s cubic-bezier(0.5, 0, 0, 1); }
+    .reveal-up { opacity: 0; transform: translateY(60px); transition: all 0.8s cubic-bezier(0.5, 0, 0, 1); }
+    
+    /* Trạng thái khi cuộn tới (Hiện và về đúng vị trí) */
+    .reveal-active { opacity: 1; transform: translate(0, 0); }
+</style>
+
+<div class="relative overflow-hidden pt-20 pb-32 lg:pt-32 lg:pb-40 text-center">
     <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-brand-neon/20 rounded-full blur-[120px] pointer-events-none"></div>
     
-    <div class="max-w-4xl mx-auto px-6 text-center relative z-10">
-        <h1 class="text-5xl lg:text-7xl font-extrabold tracking-tight mb-8">
-            Phân tích thương hiệu đa chiều với <br/>
-            <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400">Multi-Agent AI</span>
+    <div class="relative z-10 max-w-5xl mx-auto px-6 reveal-up">
+        <div class="flex items-center justify-center gap-3 mb-8">
+            <span class="px-4 py-1.5 rounded-full border border-space-700 bg-space-800/50 text-xs font-semibold tracking-wider text-gray-300 uppercase">Hệ thống AI Đa tác tử</span>
+            <span class="px-4 py-1.5 rounded-full border border-brand-neon/30 bg-brand-neon/10 text-xs font-semibold tracking-wider text-brand-light uppercase">Công nghệ Tương lai</span>
+        </div>
+        
+        <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight text-white mb-6 leading-tight">
+            Thấu hiểu thị trường với <br />
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-brand-neon to-purple-500">BrandAgent AI</span>
         </h1>
-        <p class="text-lg text-gray-400 mb-10 max-w-2xl mx-auto">
-            Hệ thống tự động thu thập dữ liệu, phân tích cảm xúc và đánh giá uy tín thương hiệu của bạn trên không gian mạng theo thời gian thực.
+        
+        <p class="text-lg md:text-xl text-gray-400 mb-10 max-w-2xl mx-auto">
+            Hệ thống tự động thu thập, phân tích và đánh giá cảm xúc từ hàng ngàn bình luận trên các sàn Thương mại điện tử, giúp doanh nghiệp ra quyết định tức thì.
         </p>
         
-        <div class="flex items-center justify-center mt-8">
-            <a href="/auth/login" class="inline-flex items-center gap-3 bg-brand-neon hover:bg-purple-500 text-white px-10 py-4 rounded-full text-lg font-semibold transition shadow-[0_0_20px_rgba(139,92,246,0.6)]">
-                Bắt đầu trải nghiệm ngay
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <a href="{% if user %}/dashboard{% else %}/auth/login{% endif %}" class="bg-brand-neon hover:bg-purple-500 text-white font-bold py-4 px-8 rounded-full shadow-[0_0_20px_rgba(139,92,246,0.4)] transition transform hover:scale-105 w-full sm:w-auto">
+                + Bắt đầu trải nghiệm ngay
+            </a>
+            <a href="#features" class="bg-space-800 hover:bg-space-700 text-white font-bold py-4 px-8 rounded-full border border-space-600 transition w-full sm:w-auto">
+                Khám phá tính năng ↓
             </a>
         </div>
     </div>
 </div>
+
+<div id="features" class="py-24 bg-space-900 border-t border-space-800 overflow-hidden">
+    <div class="max-w-7xl mx-auto px-6">
+        <div class="text-center mb-16 reveal-up">
+            <span class="text-brand-neon text-sm font-bold tracking-widest uppercase flex items-center justify-center gap-2 mb-4">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                TÍNH NĂNG NỔI BẬT
+            </span>
+            <h2 class="text-4xl md:text-5xl font-bold text-white mb-4">Giải mã uy tín thương hiệu bằng <span class="text-brand-neon">AI</span></h2>
+            <p class="text-gray-400 text-lg">Nền tảng công nghệ phân tích dữ liệu hàng đầu dành cho doanh nghiệp Việt Nam.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div class="bg-space-800/50 p-8 rounded-2xl border border-space-700 hover:border-brand-neon/50 transition relative group reveal-up" style="transition-delay: 0.1s;">
+                <div class="text-brand-neon font-mono text-sm mb-4 opacity-70">[01]</div>
+                <div class="text-3xl mb-4">🤖</div>
+                <h3 class="text-xl font-bold text-white mb-3">Tác tử AI Chuyên sâu</h3>
+                <p class="text-gray-400 text-sm leading-relaxed">Sử dụng mô hình ngôn ngữ lớn (LLMs) phân tích cảm xúc từng bình luận với độ chính xác tuyệt đối.</p>
+            </div>
+            <div class="bg-space-800/50 p-8 rounded-2xl border border-space-700 hover:border-brand-neon/50 transition relative group reveal-up" style="transition-delay: 0.2s;">
+                <div class="text-brand-neon font-mono text-sm mb-4 opacity-70">[02]</div>
+                <div class="text-3xl mb-4">📊</div>
+                <h3 class="text-xl font-bold text-white mb-3">So sánh Đối thủ</h3>
+                <p class="text-gray-400 text-sm leading-relaxed">Cung cấp góc nhìn toàn diện, đặt thương hiệu của bạn lên bàn cân với các đối thủ cùng phân khúc.</p>
+            </div>
+            <div class="bg-space-800/50 p-8 rounded-2xl border border-space-700 hover:border-brand-neon/50 transition relative group reveal-up" style="transition-delay: 0.3s;">
+                <div class="text-brand-neon font-mono text-sm mb-4 opacity-70">[03]</div>
+                <div class="text-3xl mb-4">☁️</div>
+                <h3 class="text-xl font-bold text-white mb-3">Báo cáo Trực quan</h3>
+                <p class="text-gray-400 text-sm leading-relaxed">Hệ thống biểu đồ phân tích kỹ thuật chuyên sâu được lưu trữ vĩnh viễn trên nền tảng đám mây.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="how-it-works" class="py-24 bg-[#0B0F19] overflow-hidden">
+    <div class="max-w-7xl mx-auto px-6 flex flex-col-reverse lg:flex-row items-center gap-16">
+        <div class="w-full lg:w-1/2 space-y-6 bg-space-800 border border-space-700 rounded-3xl p-8 md:p-12 shadow-2xl reveal-left">
+            <div class="flex gap-6">
+                <div class="flex-shrink-0 w-12 h-12 rounded-xl bg-brand-neon/20 text-brand-neon flex items-center justify-center text-xl">1</div>
+                <div>
+                    <div class="text-brand-neon font-mono text-xs font-bold mb-1">01</div>
+                    <h4 class="text-lg font-bold text-white mb-1">Cung cấp Yêu cầu</h4>
+                    <p class="text-gray-400 text-sm">Nhập tên thương hiệu, danh mục sản phẩm hoặc đối thủ cần phân tích.</p>
+                </div>
+            </div>
+            <div class="flex gap-6">
+                <div class="flex-shrink-0 w-12 h-12 rounded-xl bg-brand-neon/20 text-brand-neon flex items-center justify-center text-xl">2</div>
+                <div>
+                    <div class="text-brand-neon font-mono text-xs font-bold mb-1">02</div>
+                    <h4 class="text-lg font-bold text-white mb-1">AI Đa Tác Tử Xử Lý</h4>
+                    <p class="text-gray-400 text-sm">Hệ thống tự động cào dữ liệu, làm sạch và gửi cho các Agent chấm điểm cảm xúc.</p>
+                </div>
+            </div>
+            <div class="flex gap-6">
+                <div class="flex-shrink-0 w-12 h-12 rounded-xl bg-brand-neon/20 text-brand-neon flex items-center justify-center text-xl">3</div>
+                <div>
+                    <div class="text-brand-neon font-mono text-xs font-bold mb-1">03</div>
+                    <h4 class="text-lg font-bold text-white mb-1">Nhận Báo Cáo Chuyên Sâu</h4>
+                    <p class="text-gray-400 text-sm">Xem kết quả trên biểu đồ trực quan và nhận bản tóm tắt qua Email.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="w-full lg:w-1/2 reveal-right">
+            <span class="text-brand-neon text-sm font-bold tracking-widest uppercase flex items-center gap-2 mb-4">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                ĐƠN GIẢN & TỰ ĐỘNG
+            </span>
+            <h2 class="text-4xl md:text-5xl font-bold text-white mb-6 leading-tight">Chỉ 3 bước để có <br/>báo cáo hoàn hảo</h2>
+            <p class="text-gray-400 text-lg mb-8 leading-relaxed">Từ một cái tên thương hiệu đến một bản phân tích thị trường chuyên sâu — nhanh chóng, khách quan và không yêu cầu bất kỳ kỹ năng phân tích dữ liệu nào.</p>
+            <a href="{% if user %}/dashboard{% else %}/auth/login{% endif %}" class="inline-flex items-center gap-2 text-brand-neon font-bold hover:text-purple-400 border border-brand-neon/50 px-6 py-3 rounded-full transition">
+                ✦ Dùng thử miễn phí &rarr;
+            </a>
+        </div>
+    </div>
+</div>
+
+<footer class="mt-auto overflow-hidden">
+    <div id="about-us" class="bg-brand-neon text-white py-20 text-center px-6 reveal-up">
+        <span class="text-white/80 text-sm font-bold tracking-widest uppercase mb-4 block">✦ VỀ CHÚNG TÔI</span>
+        <h2 class="text-4xl md:text-5xl font-extrabold mb-8 max-w-3xl mx-auto">BrandAgent, giải pháp công nghệ AI toàn diện</h2>
+        
+        <div class="max-w-4xl mx-auto text-sm md:text-base leading-relaxed text-white/90 mb-10 space-y-2">
+            <p class="font-bold uppercase tracking-wide text-lg">CÔNG TY TNHH MỘT THÀNH VIÊN CÔNG NGHỆ KỸ THUẬT TIÊN PHONG</p>
+            <p>Chuyên cung cấp giải pháp công nghệ kỹ thuật cao và xuất nhập khẩu các mặt hàng công nghệ tiên tiến.</p>
+            <div class="pt-4 space-y-1">
+                <p>MST: 1801526082 - Người đại diện: NGÔ HỒ ANH KHÔI</p>
+                <p>P18, Đường số 8, KDC lô 49, Khu đô thị Nam Cần Thơ, Phường Cái Răng, TP. Cần Thơ</p>
+                <p>0916 416 409 - Hoạt động từ 05/04/2017</p>
+            </div>
+        </div>
+
+        <a href="{% if user %}/dashboard{% else %}/auth/login{% endif %}" class="bg-space-900 text-white hover:bg-space-800 font-bold py-4 px-10 rounded-full transition inline-flex items-center gap-2 shadow-xl">
+            ✦ Bắt đầu ngay
+        </a>
+        <p class="mt-4 text-xs text-white/70">Không cần thẻ tín dụng - Tặng ngay Token trải nghiệm khi đăng ký</p>
+    </div>
+
+</footer>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.15 // Kích hoạt khi cuộn thấy 15% của khối
+        };
+
+        const observer = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    // Thêm class 'reveal-active' để thực hiện CSS Transition
+                    entry.target.classList.add('reveal-active');
+                    // Gỡ theo dõi để hiệu ứng chỉ chạy 1 lần duy nhất
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
+
+        // Tìm tất cả các phần tử có gắn class reveal và bắt đầu theo dõi
+        document.querySelectorAll('.reveal-left, .reveal-right, .reveal-up').forEach((el) => {
+            observer.observe(el);
+        });
+    });
+</script>
 {% endblock %}

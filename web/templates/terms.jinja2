@@ -1,0 +1,55 @@
+{% extends "base.jinja2" %}
+{% block title %}Điều khoản & Chính sách - Tiên Phong Tech{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-6 py-20 relative z-10">
+    <div class="text-center mb-16 border-b border-space-700 pb-10">
+        <h1 class="text-4xl md:text-5xl font-extrabold text-white mb-4">Điều khoản Dịch vụ & Chính sách Bảo mật</h1>
+        <p class="text-gray-400">Có hiệu lực từ: 01/01/2026</p>
+    </div>
+
+    <div class="space-y-12 text-gray-300 leading-relaxed">
+        <section>
+            <h2 class="text-2xl font-bold text-brand-neon mb-4 flex items-center gap-2">
+                <span class="w-1.5 h-6 bg-brand-neon inline-block rounded-full"></span>
+                1. Chấp thuận điều khoản
+            </h2>
+            <p>Bằng việc truy cập và sử dụng hệ thống phân tích <strong>BrandAgent AI</strong>, bạn đồng ý tuân thủ các điều khoản được nêu tại đây. Nền tảng này được phát triển phục vụ mục đích nghiên cứu học thuật và trải nghiệm công nghệ. Mọi hành vi cố tình phá hoại hệ thống (Spam request, DDoS) sẽ dẫn đến việc khóa tài khoản vĩnh viễn.</p>
+        </section>
+
+        <section>
+            <h2 class="text-2xl font-bold text-brand-neon mb-4 flex items-center gap-2">
+                <span class="w-1.5 h-6 bg-brand-neon inline-block rounded-full"></span>
+                2. Nguồn gốc Dữ liệu & Bản quyền
+            </h2>
+            <p>Hệ thống của chúng tôi thực hiện thu thập dữ liệu (Crawling) từ các nền tảng thương mại điện tử công cộng (như Shopee). Toàn bộ nội dung bình luận là dữ liệu công khai. Chúng tôi không sở hữu các bình luận này mà chỉ cung cấp công cụ AI để tổng hợp và chấm điểm sắc thái cảm xúc.</p>
+        </section>
+
+        <section>
+            <h2 class="text-2xl font-bold text-brand-neon mb-4 flex items-center gap-2">
+                <span class="w-1.5 h-6 bg-brand-neon inline-block rounded-full"></span>
+                3. Quy định về Token và Thanh toán
+            </h2>
+            <p class="mb-3">Token là đơn vị năng lượng nội bộ để vận hành các Tác tử AI trong hệ thống.</p>
+            <div class="bg-[#2A1F16] border border-[#5C3D1B] p-5 rounded-xl text-[#FDBA74] mt-4">
+                <ul class="list-disc pl-5 space-y-2">
+                    <li><strong>Không hoàn tiền</strong> đối với các Token đã được hệ thống trừ đi sau khi yêu cầu phân tích hợp lệ được tiếp nhận.</li>
+                    <li><strong>Hoàn tiền 100%</strong> (Hoặc cộng lại Token) nếu xảy ra lỗi kỹ thuật đứt gãy từ hệ thống khiến Báo cáo không được tạo thành công.</li>
+                </ul>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="text-2xl font-bold text-brand-neon mb-4 flex items-center gap-2">
+                <span class="w-1.5 h-6 bg-brand-neon inline-block rounded-full"></span>
+                4. Chính sách bảo mật dữ liệu cá nhân
+            </h2>
+            <ul class="space-y-3">
+                <li><strong class="text-white">Tài khoản Google:</strong> Chúng tôi chỉ lưu trữ Email và Tên hiển thị của bạn thông qua Google OAuth2 để định danh tài khoản.</li>
+                <li><strong class="text-white">Lịch sử tìm kiếm:</strong> Các từ khóa thương hiệu bạn tìm kiếm được lưu trữ để tối ưu hóa bộ nhớ đệm (Cache) của hệ thống, giúp các yêu cầu sau được phản hồi nhanh hơn.</li>
+                <li><strong class="text-white">Không chia sẻ:</strong> Chúng tôi cam kết không bán hoặc chia sẻ thông tin liên hệ của bạn cho bất kỳ bên thứ ba nào.</li>
+            </ul>
+        </section>
+    </div>
+</div>
+{% endblock %}
