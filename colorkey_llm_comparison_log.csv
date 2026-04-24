@@ -1,4 +1,4 @@
-ReviewId,Is_Valid,Is_Seeding,Worker1_Llama8B,Worker2_Llama70B,Worker3_Llama8B_Backup,Referee_GPT4oMini,Final_Score
+﻿ReviewId,Is_Valid,Is_Seeding,Worker1_Llama8B,Worker2_Llama70B,Worker3_Llama8B_Backup,Referee_GPT4oMini,Final_Score
 5431652341,TRUE,FALSE,"{'pos': ['nhanh', 'dễ thương', 'siêu đẹp', 'xinh lắm'], 'neg': []}","{'pos': ['giao hàng nhanh', 'màu đẹp', 'rẻ'], 'neg': []}","{'pos': ['nhanh', 'dễ thương', 'siêu đẹp', 'xinh lắm'], 'neg': []}","{'pos': ['nhanh', 'dễ thương', 'siêu đẹp', 'xinh lắm', 'màu đẹp', 'rẻ'], 'neg': []}",1
 5557401357,TRUE,FALSE,"{'pos': ['đẹp', 'đáng giá tiền'], 'neg': []}","{'pos': ['son đẹp', 'đáng giá tiền', 'giao hàng nhanh'], 'neg': []}","{'pos': ['đẹp', 'đáng giá tiền'], 'neg': []}","{'pos': ['đẹp', 'đáng giá tiền', 'giao hàng nhanh'], 'neg': []}",1
 5947965411,TRUE,TRUE,"{'pos': ['xinh', 'cực', 'hợp lý'], 'neg': []}","{'pos': ['mùi thơm', 'chất son mịn', 'giá hợp lý'], 'neg': []}","{'pos': ['xinh', 'cực', 'hợp lý'], 'neg': []}","{'pos': ['xinh', 'cực', 'mùi thơm', 'chất son mịn', 'giá hợp lý'], 'neg': []}",0.8

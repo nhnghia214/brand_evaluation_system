@@ -29,63 +29,63 @@
 
     {% block header %}
     <header class="border-b border-space-700/50 backdrop-blur-md sticky top-0 w-full z-50 bg-space-900/80">
-        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between relative">
-            <a href="/" class="text-xl font-bold tracking-tighter flex items-center gap-2">
-                <span class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg text-sm">AI</span>
-                BrandAgent
-            </a>
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between gap-4">
             
-            <nav class="flex gap-6 items-center w-full justify-end lg:justify-between ml-8">
-                <div class="hidden lg:flex gap-6 border-r border-space-700 pr-6 absolute left-1/2 -translate-x-1/2">
-                    <a href="/#features" class="text-sm font-medium text-gray-400 hover:text-brand-light transition">Tính năng</a>
-                    <a href="/#how-it-works" class="text-sm font-medium text-gray-400 hover:text-brand-light transition">Hướng dẫn</a>
-                    <a href="/#about-us" class="text-sm font-medium text-gray-400 hover:text-brand-light transition">Về chúng tôi</a>
-                </div>
-
-                <div class="flex items-center gap-4 ml-auto">
-                    {% if user %}
-                        <div class="flex items-center gap-3 bg-space-800 border border-space-700 px-3 py-1.5 rounded-full hidden md:flex">
-                            <span class="text-sm font-medium text-brand-light border-r border-space-600 pr-3">
-                                Xin chào, {{ user.name }}
-                            </span>
-                            
-                            <div class="flex items-center gap-2 border-r border-space-600 pr-3">
-                                <span class="text-yellow-400 font-bold text-sm flex items-center gap-1" title="Số dư Token">
-                                    {{ user.token }} Token
-                                </span>
-                                
-                                <a href="/checkout" class="bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 text-[10px] px-2 py-0.5 rounded border border-yellow-500/20 transition-all font-bold uppercase tracking-wider flex items-center gap-1">
-                                    <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path>
-                                    </svg>
-                                    Nạp
-                                </a>
-                            </div>
-
-                            <span class="text-xs font-bold px-2 py-0.5 rounded-md {% if user.tier == 'VIP' %}bg-brand-neon/20 text-brand-light border border-brand-neon/30{% else %}bg-gray-700 text-gray-300{% endif %}">
-                                {{ user.tier }}
-                            </span>
-                        </div>
-                        
-                        {% if user.role == 'admin' %}
-                            <a href="/admin" class="text-sm text-gray-400 hover:text-white transition px-3 py-2 border-l border-space-700">Admin Panel</a>
-                        {% else %}
-                            <a href="/dashboard" class="text-sm text-gray-400 hover:text-white transition px-3 py-2 border-l border-space-700">Dashboard</a>
-                        {% endif %}
-                        
-                        <a href="/auth/logout" class="bg-red-500/10 hover:bg-red-500/20 text-red-400 px-5 py-2 rounded-full text-sm font-medium transition backdrop-blur-sm border border-red-500/10 ml-2">
-                            Logout
-                        </a>
-                    {% else %}
-                        <a href="/auth/login" class="text-sm font-bold text-gray-300 hover:text-white transition px-4 py-2">
-                            Đăng nhập
-                        </a>
-                        <a href="/auth/login" class="bg-brand-neon hover:bg-purple-500 text-white text-sm font-bold py-2 px-6 rounded-full shadow-[0_0_15px_rgba(139,92,246,0.4)] transition transform hover:scale-105">
-                            Bắt đầu ngay
-                        </a>
-                    {% endif %}
-                </div>
+            <div class="flex-shrink-0">
+                <a href="/" class="text-xl font-bold tracking-tighter flex items-center gap-2">
+                    <span class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg text-sm">AI</span>
+                    <span class="hidden sm:block">BrandAgent</span>
+                </a>
+            </div>
+            
+            <nav class="hidden lg:flex items-center gap-6 justify-center flex-1">
+                <a href="/#features" class="text-sm font-medium text-gray-400 hover:text-brand-light transition whitespace-nowrap">Tính năng</a>
+                <a href="/#how-it-works" class="text-sm font-medium text-gray-400 hover:text-brand-light transition whitespace-nowrap">Hướng dẫn</a>
+                <a href="/#about-us" class="text-sm font-medium text-gray-400 hover:text-brand-light transition whitespace-nowrap">Về chúng tôi</a>
             </nav>
+
+            <div class="flex items-center gap-2 md:gap-3 flex-shrink-0">
+                
+                <a href="/static/BrandAgent.apk" download class="hidden xl:flex items-center gap-1.5 text-xs font-bold text-brand-light hover:text-white transition group border border-brand-light/30 px-3 py-1.5 rounded-full whitespace-nowrap">
+                    <svg class="w-4 h-4 group-hover:scale-110 transition" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M17.523 15.3414L20.355 20.2467C20.5516 20.5873 20.435 21.0205 20.0945 21.217C19.7539 21.4136 19.3207 21.297 19.1241 20.9565L16.2629 16H7.73712L4.87586 20.9565C4.67931 21.297 4.24612 21.4136 3.90554 21.217C3.56495 21.0205 3.44837 20.5873 3.64493 20.2467L6.47696 15.3414C3.1259 13.5684 1 10.0526 1 6H23C23 10.0526 20.8741 13.5684 17.523 15.3414ZM7.5 10C8.05228 10 8.5 9.55228 8.5 9C8.5 8.44772 8.05228 8 7.5 8C6.94772 8 6.5 8.44772 6.5 9C6.5 9.55228 6.94772 10 7.5 10ZM16.5 10C17.0523 10 17.5 9.55228 17.5 9C17.5 8.44772 17.0523 8 16.5 8C15.9477 8 15.5 8.44772 15.5 9C15.5 9.55228 15.9477 10 16.5 10Z"/>
+                    </svg>
+                    Tải APK
+                </a>
+
+                {% if user %}
+                    <div class="flex items-center gap-2 bg-space-800 border border-space-700 px-2 lg:px-3 py-1.5 rounded-full hidden md:flex">
+                        <span class="text-xs lg:text-sm font-medium text-brand-light border-r border-space-600 pr-2 truncate max-w-[80px] lg:max-w-[120px]">
+                            Xin chào, {{ user.name }}
+                        </span>
+                        
+                        <div class="flex items-center gap-1.5 border-r border-space-600 pr-2">
+                            <span class="text-yellow-400 font-bold text-xs lg:text-sm whitespace-nowrap">{{ user.token }} tokens </span>
+                            <a href="/checkout" class="bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 text-[10px] px-1.5 py-0.5 rounded border border-yellow-500/20 transition-all font-bold uppercase tracking-wider flex items-center whitespace-nowrap">
+                                + Nạp
+                            </a>
+                        </div>
+
+                        <span class="text-[10px] lg:text-xs font-bold px-1.5 py-0.5 rounded-md {% if user.tier == 'VIP' %}bg-brand-neon/20 text-brand-light{% else %}bg-gray-700 text-gray-300{% endif %} whitespace-nowrap">
+                            {{ user.tier }}
+                        </span>
+                    </div>
+                    
+                    {% if user.role == 'admin' %}
+                        <a href="/admin" class="text-xs lg:text-sm text-gray-400 hover:text-white transition px-2 hidden sm:block whitespace-nowrap">Admin</a>
+                    {% else %}
+                        <a href="/dashboard" class="text-xs lg:text-sm text-gray-400 hover:text-white transition px-2 hidden sm:block whitespace-nowrap">Dashboard</a>
+                    {% endif %}
+                    
+                    <a href="/auth/logout" class="bg-red-500/10 hover:bg-red-500/20 text-red-400 px-4 py-1.5 rounded-full text-xs lg:text-sm font-medium transition border border-red-500/10 ml-1 whitespace-nowrap">
+                        Logout
+                    </a>
+                {% else %}
+                    <a href="/auth/login" class="bg-brand-neon hover:bg-purple-500 text-white text-sm font-bold py-2.5 px-6 rounded-full shadow-[0_0_15px_rgba(139,92,246,0.4)] transition transform hover:scale-105 whitespace-nowrap">
+                        Bắt đầu ngay
+                    </a>
+                {% endif %}
+            </div>
         </div>
     </header>
     {% endblock %}
