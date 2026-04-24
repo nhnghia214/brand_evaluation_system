@@ -13,15 +13,47 @@
         </div>
         
         <nav class="flex-1 p-4 space-y-2">
-            <a href="/admin?tab=overview" class="block px-4 py-2.5 rounded-lg transition {% if tab == 'overview' %}bg-brand-neon/10 text-brand-light font-medium border border-brand-neon/20{% else %}text-gray-400 hover:bg-space-700 hover:text-white{% endif %}">Thống kê chung</a>
+            <a href="/admin?tab=overview" class="block px-4 py-2.5 rounded-lg transition {% if tab == 'overview' %}bg-brand-neon/10 text-brand-light font-medium border border-brand-neon/20{% else %}text-gray-400 hover:bg-space-700 hover:text-white{% endif %}">
+                <div class="flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                    Thống kê chung
+                </div>
+            </a>
             
-            <a href="/admin?tab=brands" class="block px-4 py-2.5 rounded-lg transition {% if tab == 'brands' %}bg-brand-neon/10 text-brand-light font-medium border border-brand-neon/20{% else %}text-gray-400 hover:bg-space-700 hover:text-white{% endif %}">Quản lý Thương hiệu</a>
+            <a href="/admin?tab=brands" class="block px-4 py-2.5 rounded-lg transition {% if tab == 'brands' %}bg-brand-neon/10 text-brand-light font-medium border border-brand-neon/20{% else %}text-gray-400 hover:bg-space-700 hover:text-white{% endif %}">
+                <div class="flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
+                    Quản lý Thương hiệu
+                </div>
+            </a>
 
-            <a href="/admin?tab=jobs" class="block px-4 py-2.5 rounded-lg transition {% if tab == 'jobs' %}bg-brand-neon/10 text-brand-light font-medium border border-brand-neon/20{% else %}text-gray-400 hover:bg-space-700 hover:text-white{% endif %}">Quản lý Job Crawl</a>
+            <a href="/admin?tab=jobs" class="block px-4 py-2.5 rounded-lg transition {% if tab == 'jobs' %}bg-brand-neon/10 text-brand-light font-medium border border-brand-neon/20{% else %}text-gray-400 hover:bg-space-700 hover:text-white{% endif %}">
+                <div class="flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    Quản lý Job Crawl
+                </div>
+            </a>
             
-            <a href="/admin?tab=logs" class="block px-4 py-2.5 rounded-lg transition {% if tab == 'logs' %}bg-brand-neon/10 text-brand-light font-medium border border-brand-neon/20{% else %}text-gray-400 hover:bg-space-700 hover:text-white{% endif %}">Logs hệ thống</a>
+            <a href="/admin?tab=logs" class="block px-4 py-2.5 rounded-lg transition {% if tab == 'logs' %}bg-brand-neon/10 text-brand-light font-medium border border-brand-neon/20{% else %}text-gray-400 hover:bg-space-700 hover:text-white{% endif %}">
+                <div class="flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    Logs hệ thống
+                </div>
+            </a>
         
-            <a href="/admin?tab=requests" class="block px-4 py-2.5 rounded-lg transition {% if tab == 'requests' %}bg-brand-neon/10 text-brand-light font-medium border border-brand-neon/20{% else %}text-gray-400 hover:bg-space-700 hover:text-white{% endif %}">Quản lý Yêu cầu</a>
+            <a href="/admin?tab=requests" class="block px-4 py-2.5 rounded-lg transition {% if tab == 'requests' %}bg-brand-neon/10 text-brand-light font-medium border border-brand-neon/20{% else %}text-gray-400 hover:bg-space-700 hover:text-white{% endif %}">
+                <div class="flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                    Quản lý Yêu cầu
+                </div>
+            </a>
+            
+            <a href="/admin?tab=revenue" class="block px-4 py-2.5 rounded-lg transition {% if tab == 'revenue' %}bg-green-500/10 text-green-400 font-medium border border-green-500/20{% else %}text-gray-400 hover:bg-space-700 hover:text-white{% endif %}">
+                <div class="flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    Thống kê Doanh thu
+                </div>
+            </a>
         </nav>
         
         <div class="p-4 border-t border-space-700 space-y-3">
@@ -41,6 +73,8 @@
                 {% elif tab == 'brands' %}Quản lý Thương hiệu
                 {% elif tab == 'jobs' %}Quản lý tiến trình (Crawl Jobs)
                 {% elif tab == 'logs' %}System Logs (Deep Crawl)
+                {% elif tab == 'requests' %}Quản lý Yêu cầu
+                {% elif tab == 'revenue' %}Thống kê & Báo cáo Tài chính
                 {% endif %}
             </h1>
             <div class="flex items-center gap-4">
@@ -370,6 +404,83 @@
                 </div>
             </div>
 
+
+            {% elif tab == 'revenue' %}
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-gradient-to-br from-green-500/20 to-space-800 border border-green-500/30 rounded-xl p-6 shadow-lg relative overflow-hidden">
+                    <div class="absolute -right-4 -bottom-4 opacity-20"><svg class="w-32 h-32 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path></svg></div>
+                    <p class="text-green-400 text-sm mb-1 uppercase tracking-wider font-semibold">Tổng Doanh Thu</p>
+                    <h3 class="text-3xl font-bold text-white">{{ total_revenue }}</h3>
+                </div>
+                
+                <div class="bg-space-800 border border-space-700 rounded-xl p-6 shadow-lg">
+                    <p class="text-gray-400 text-sm mb-1 uppercase tracking-wider font-semibold">Đơn Thành Công</p>
+                    <h3 class="text-3xl font-bold text-brand-light">{{ total_orders }} <span class="text-sm font-normal text-gray-500">giao dịch</span></h3>
+                </div>
+
+                <div class="bg-space-800 border border-space-700 rounded-xl p-6 shadow-lg flex items-center justify-center hover:border-blue-500 transition group cursor-pointer" onclick="exportToCSV()">
+                    <div class="text-center">
+                        <svg class="w-8 h-8 text-gray-400 group-hover:text-blue-400 transition mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        <span class="text-gray-300 group-hover:text-white font-semibold tracking-wider">XUẤT BÁO CÁO (CSV)</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                <div class="bg-space-800 border border-space-700 rounded-xl p-6 shadow-lg lg:col-span-2">
+                    <h2 class="font-semibold text-lg mb-4 text-gray-200">Biến động doanh thu (7 ngày qua)</h2>
+                    <div class="h-64 w-full">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="bg-space-800 border border-space-700 rounded-xl p-6 shadow-lg flex flex-col">
+                    <h2 class="font-semibold text-lg mb-4 text-gray-200">Phân bổ Dịch vụ</h2>
+                    <div class="flex-1 relative min-h-[200px]">
+                        <canvas id="packageChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-space-800 border border-space-700 rounded-xl overflow-hidden shadow-lg">
+                <div class="px-6 py-4 border-b border-space-700">
+                    <h2 class="font-semibold text-lg">Lịch sử Giao dịch (PayOS)</h2>
+                </div>
+                <table class="w-full text-left text-sm" id="transactionTable">
+                    <thead class="bg-space-900/50 text-gray-400">
+                        <tr>
+                            <th class="px-6 py-4 font-medium">Mã Đơn</th>
+                            <th class="px-6 py-4 font-medium">Khách hàng</th>
+                            <th class="px-6 py-4 font-medium">Gói Đăng ký</th>
+                            <th class="px-6 py-4 font-medium">Số tiền</th>
+                            <th class="px-6 py-4 font-medium">Thời gian</th>
+                            <th class="px-6 py-4 font-medium text-right">Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-space-700">
+                        {% for tx in all_transactions %}
+                        <tr class="hover:bg-space-700/30 transition">
+                            <td class="px-6 py-4 text-gray-400 font-mono">#{{ tx.MaDon }}</td>
+                            <td class="px-6 py-4 text-white">{{ tx.Email }}</td>
+                            <td class="px-6 py-4 text-brand-light font-medium">{{ tx.Goi_DichVu }}</td>
+                            <td class="px-6 py-4 text-green-400 font-bold">{{"{:,.0f}".format(tx.SoTien).replace(',', '.')}}đ</td>
+                            <td class="px-6 py-4 text-gray-400">{{ tx.NgayTao.strftime('%d/%m/%Y %H:%M') }}</td>
+                            <td class="px-6 py-4 text-right">
+                                {% if tx.TrangThai == 'SUCCESS' %}
+                                <span class="px-2 py-1 bg-green-500/10 text-green-400 rounded text-xs border border-green-500/20">Thành công</span>
+                                {% else %}
+                                <span class="px-2 py-1 bg-yellow-500/10 text-yellow-400 rounded text-xs border border-yellow-500/20">Đang chờ</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="6" class="px-6 py-8 text-center text-gray-500">Chưa có giao dịch nào.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
             {% endif %}
 
         </main>
@@ -526,4 +637,90 @@
     });
 </script>
 {% endif %}
+
+{% if tab == 'revenue' %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Định dạng Chart.js cho Dark Mode
+    Chart.defaults.color = '#9CA3AF';
+    Chart.defaults.borderColor = 'rgba(55, 65, 81, 0.4)';
+
+    // 1. Biểu đồ Đường (Doanh thu)
+    const revLabels = {{ rev_labels | default([]) | tojson }};
+    const revData = {{ rev_data | default([]) | tojson }};
+    new Chart(document.getElementById('revenueChart'), {
+        type: 'line',
+        data: {
+            labels: revLabels,
+            datasets: [{
+                label: 'Doanh thu (VNĐ)',
+                data: revData,
+                borderColor: '#10B981', // Emerald 500
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                borderWidth: 3,
+                tension: 0.3,
+                fill: true,
+                pointBackgroundColor: '#34D399',
+                pointRadius: 4
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+
+    // 2. Biểu đồ Tròn (Tỷ lệ Gói dịch vụ)
+    // Tái cấu trúc dữ liệu Python sang mảng JS
+    const packageStats = {{ package_stats | default([]) | tojson }};
+    const pieLabels = packageStats.map(item => item.Goi_DichVu);
+    const pieData = packageStats.map(item => item.Qty);
+    
+    new Chart(document.getElementById('packageChart'), {
+        type: 'doughnut',
+        data: {
+            labels: pieLabels,
+            datasets: [{
+                data: pieData,
+                backgroundColor: ['#8B5CF6', '#3B82F6', '#10B981', '#F59E0B', '#EF4444'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { color: '#D1D5DB', padding: 15 } }
+            },
+            cutout: '65%'
+        }
+    });
+
+    // 3. Hàm xuất file Excel (CSV) bằng JavaScript thuần
+    function exportToCSV() {
+        let csv = [];
+        let rows = document.querySelectorAll("#transactionTable tr");
+        
+        for (let i = 0; i < rows.length; i++) {
+            let row = [], cols = rows[i].querySelectorAll("td, th");
+            for (let j = 0; j < cols.length; j++) {
+                // Xóa dấu phẩy trong số tiền để tránh lỗi CSV
+                let data = cols[j].innerText.replace(/,/g, '').replace(/\n/g, ' '); 
+                row.push('"' + data + '"');
+            }
+            csv.push(row.join(","));
+        }
+
+        // Tạo file và tự động tải xuống
+        let csvFile = new Blob(["\uFEFF" + csv.join("\n")], {type: "text/csv;charset=utf-8;"});
+        let downloadLink = document.createElement("a");
+        downloadLink.download = "BaoCaoDoanhThu_BrandAgent.csv";
+        downloadLink.href = window.URL.createObjectURL(csvFile);
+        downloadLink.style.display = "none";
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+    }
+</script>
+{% endif %}
+
 {% endblock %}

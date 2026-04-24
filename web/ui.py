@@ -401,6 +401,9 @@ def admin_dashboard(request: Request, tab: str = "overview"):
             cursor.execute("SELECT BrandId, BrandName, CreatedAt FROM Brand ORDER BY BrandId DESC")
             context["all_brands"] = cursor.fetchall()
 
+        # ==================================================
+        # TAB 5: QUẢN LÝ YÊU CẦU TỪ NGƯỜI DÙNG (REQUESTS)
+        # ==================================================
         elif tab == "requests":
             # Lấy tham số tìm kiếm
             search = request.query_params.get("search", "").strip()
@@ -488,6 +491,39 @@ def admin_dashboard(request: Request, tab: str = "overview"):
                 ORDER BY k.NgayGhiNhan ASC
             """)
             context["appeals"] = cursor.fetchall()
+
+        # ==================================================
+        # TAB 6: THỐNG KÊ & BÁO CÁO TÀI CHÍNH
+        # ==================================================
+        elif tab == "revenue":
+            # 1. Thống kê tổng quan
+            cursor.execute("SELECT SUM(SoTien) AS Total, COUNT(*) AS Count FROM DonHang WHERE TrangThai = 'SUCCESS'")
+            summary = cursor.fetchone()
+            context["total_revenue"] = f"{summary.Total or 0:,} đ"
+            context["total_orders"] = summary.Count
+
+            # 2. Biến động doanh thu 7 ngày gần nhất
+            cursor.execute("""
+                SELECT CAST(NgayTao AS DATE) as Date, SUM(SoTien) as DailyTotal
+                FROM DonHang WHERE TrangThai = 'SUCCESS'
+                AND NgayTao >= CAST(DATEADD(day, -7, GETDATE()) AS DATE)
+                GROUP BY CAST(NgayTao AS DATE) ORDER BY Date ASC
+            """)
+            chart_raw = cursor.fetchall()
+            context["rev_labels"] = [r.Date.strftime("%d/%m") for r in chart_raw]
+            context["rev_data"] = [int(r.DailyTotal) for r in chart_raw]
+
+            # 3. Phân bổ theo gói dịch vụ (Pie Chart)
+            cursor.execute("""
+                SELECT Goi_DichVu, COUNT(*) as Qty FROM DonHang 
+                WHERE TrangThai = 'SUCCESS' GROUP BY Goi_DichVu
+            """)
+            # Ép kiểu Row thành Dictionary để Jinja2 có thể parse sang JSON
+            context["package_stats"] = [{"Goi_DichVu": r.Goi_DichVu, "Qty": r.Qty} for r in cursor.fetchall()]
+
+            # 4. Danh sách giao dịch để lọc/xuất báo cáo
+            cursor.execute("SELECT * FROM DonHang ORDER BY NgayTao DESC")
+            context["all_transactions"] = cursor.fetchall() 
 
     except Exception as e:
         print(f"Lỗi truy vấn Admin: {e}")
