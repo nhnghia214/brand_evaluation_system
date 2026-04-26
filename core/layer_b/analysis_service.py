@@ -7,7 +7,6 @@ import csv
 from crawler.db.db_connection import get_connection
 from core.layer_a.score_calculator import calculate
 
-# Import các Agent theo kiến trúc Dây chuyền mới
 from core.layer_b.sentiment_agents.cleaner_agent import CleanerAgent
 from core.layer_b.sentiment_agents.worker_agents import WorkerAgent
 from core.layer_b.sentiment_agents.referee_agent import RefereeAgent
@@ -47,6 +46,9 @@ class AnalysisService:
                     self._analyze_by_id(brand_id, category_id)
                 except Exception as e:
                     print("[Analysis] Error:", e)
+            
+            # NGĂN CHẶN SPAM CPU: Nghỉ 1 giây giữa các lô xử lý liên tục
+            time.sleep(1)
                     
     def _analyze_single(self, brand_id: int, category_id: int):
         return self._analyze_by_id(brand_id, category_id)
@@ -88,12 +90,12 @@ class AnalysisService:
         old_positive_rate = old_data[0] if old_data else 0.0
         old_total_evaluated = old_data[1] if old_data else 0
 
-        # 2. TÌM NHỮNG BÌNH LUẬN CHƯA PHÂN TÍCH (LẤY TOP 5 THEO LÔ)
+        # 2. TÌM NHỮNG BÌNH LUẬN CHƯA PHÂN TÍCH
+        # ĐÃ SỬA: Xóa dòng `AND r.Comment IS NOT NULL` để hốt luôn bình luận rỗng và đánh dấu hoàn thành
         cursor.execute("""
             SELECT TOP 5 r.ReviewId, r.Comment FROM Review r
             JOIN Product p ON r.ProductId = p.ProductId
             WHERE p.BrandId = ? AND p.CategoryId = ?
-            AND r.Comment IS NOT NULL
             AND r.IsAnalyzed = 0
         """, (brand_id, category_id))
         
@@ -111,7 +113,7 @@ class AnalysisService:
         for row in new_reviews_data:
             review_id, text = row.ReviewId, row.Comment
 
-            # Lọc dữ liệu rỗng ngay tại Python để đỡ tốn API
+            # Lọc dữ liệu rỗng ngay tại Python để đỡ tốn API và đưa thẳng vào list "Đã hoàn thành"
             if not text or text.strip() == "":
                 processed_ids_for_empty.append(review_id)
                 continue
@@ -121,11 +123,9 @@ class AnalysisService:
         # ==========================================================
         # 3. KHỞI TẠO DÂY CHUYỀN VỚI API KEYS TỪ FILE .ENV
         # ==========================================================
-        # Đọc mảng 3 keys Groq từ config
         groq_keys_str = os.getenv("GROQ_API_KEYS", "")
         groq_keys = [k.strip() for k in groq_keys_str.split(",") if k.strip()]
         
-        # Nếu không đủ 3 keys thì lấy key đầu tiên đắp vào cho khỏi lỗi
         key1 = groq_keys[0] if len(groq_keys) > 0 else os.getenv("GROQ_API_KEY")
         key2 = groq_keys[1] if len(groq_keys) > 1 else key1
         key3 = groq_keys[2] if len(groq_keys) > 2 else key1
@@ -152,11 +152,9 @@ class AnalysisService:
         # ==========================================================
         # 5. XỬ LÝ LƯU AN TOÀN & CHẶN LỖI LỌT LƯỚI
         # ==========================================================
-        # KIỂM TRA LỖI TOÀN CỤC NGAY LẬP TỨC: Nếu câu đầu bị lỗi -> Cả lô lỗi -> Hủy!
         if processed_batch and processed_batch[0].get("status") == "api_error":
             print(f"\n🚨 [Analysis] DÂY CHUYỀN BÁO LỖI API! Đang khóa 12h...")
             self.__class__.QUOTA_LOCKED_UNTIL = datetime.now() + timedelta(hours=12)
-            # Dọn sạch mảng này để vòng lặp bên dưới không chạy, không lưu bậy bạ
             processed_batch = [] 
             
         successful_ids = processed_ids_for_empty.copy()
@@ -164,10 +162,8 @@ class AnalysisService:
         new_valid_comments = 0
 
         for item in processed_batch:
-            # Ghi nhận ID đã được xử lý (thành công)
             successful_ids.append(item["id"])
             
-            # Nếu câu này là rác/spam, Cleaner loại bỏ (is_valid = False)
             if not item.get("is_valid", True):
                 continue
                 
@@ -226,7 +222,7 @@ class AnalysisService:
               brand_id, category_id, avg_rating, sentiment_ratio, 1-sentiment_ratio, score))
         
         # ==================================================
-        # 7. XUẤT CSV CHO CASE STUDY (CHỈ CHO THƯƠNG HIỆU COLORKEY - ID: 13)
+        # 7. XUẤT CSV CHO CASE STUDY
         # ==================================================
         if brand_id == 13 and processed_batch:
             csv_file = 'colorkey_llm_comparison_log.csv'
@@ -234,15 +230,12 @@ class AnalysisService:
             
             with open(csv_file, mode='a', newline='', encoding='utf-8') as f:
                 writer = csv.writer(f)
-                # Viết Header nếu file chưa tồn tại
                 if not file_exists:
                     writer.writerow(['ReviewId', 'Is_Valid', 'Is_Seeding', 'Worker1_Llama8B', 'Worker2_Llama70B', 'Worker3_Llama8B_Backup', 'Referee_GPT4oMini', 'Final_Score'])
                 
-                # Ghi nối tiếp từng dòng thành công
                 for item in processed_batch:
                     if item.get("status") == "api_error": continue
                     
-                    # Rút trích danh sách từ vựng thành chuỗi để dễ nhìn trong Excel
                     w1 = str(item.get("worker_extractions", [{}])[0].get("data", {})) if len(item.get("worker_extractions", [])) > 0 else "{}"
                     w2 = str(item.get("worker_extractions", [{}])[1].get("data", {})) if len(item.get("worker_extractions", [])) > 1 else "{}"
                     w3 = str(item.get("worker_extractions", [{}])[2].get("data", {})) if len(item.get("worker_extractions", [])) > 2 else "{}"
@@ -255,7 +248,7 @@ class AnalysisService:
                         w1, w2, w3, ref,
                         item.get("final_score_0_to_1", 0.5)
                     ])
-            print(f" 📊 Đã ghi nối tiếp {len(successful_ids)} dòng vào file CSV Colorkey.")
+            print(f" 📊 Đã ghi nối tiếp {len(processed_batch)} dòng vào file CSV Colorkey.")
 
         conn.commit()
         conn.close()

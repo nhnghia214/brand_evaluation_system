@@ -208,6 +208,9 @@
 # =========================
 # scheduler.py (DEEP CRAWL – ROUND-ROBIN BATCH BASED)
 # =========================
+# =========================
+# scheduler.py (DEEP CRAWL – ROUND-ROBIN BATCH BASED)
+# =========================
 import time
 from random import uniform
 import sys
@@ -226,9 +229,9 @@ from crawler.db.repositories import (
     update_search_crawl_page,
     reset_search_crawl,
 
-    # 🔥 DEEP CRAWL (Đã thay đổi sang Round-Robin)
+    # 🔥 DEEP CRAWL 
     get_or_create_deep_batches,
-    get_next_round_robin_batch, # Hàm mới
+    get_next_round_robin_batch, 
     mark_deep_batch_running,
     mark_deep_batch_done
 )
@@ -281,129 +284,196 @@ class CrawlWorker:
         start_time = datetime.now()
         search_soft_block_count = 0
 
-        # ==========================================
-        # GIAI ĐOẠN 1: TÌM KIẾM SẢN PHẨM & CHIA LÔ
-        # ==========================================
-        # Nếu start_page == -1 tức là Job này đã Quét xong ở đợt trước, ta nhảy thẳng qua cào Review
-        if search_start_page != -1:
-            print(f"\n[CrawlWorker] 🔍 BẮT ĐẦU QUÉT SẢN PHẨM ({brand}) TỪ TRANG {search_start_page}...")
-            
-            for item in searcher.search_and_collect_forever(brand, category):
-                # ===== CHUYỂN TRANG TÌM KIẾM =====
-                if "_page_done" in item:
-                    page_idx = item["page_index"]
-
-                    if item.get("items_found", 0) == 0:
-                        search_soft_block_count += 1
-                    else:
-                        search_soft_block_count = 0
-
-                    if search_soft_block_count >= 5:
-                        update_job_status(job_id, "PAUSED")
-                        raise CaptchaError("Search captcha detected")
-
-                    update_search_crawl_page(job_id, page_idx + 1)
-
-                    if page_idx + 1 >= MAX_SEARCH_PAGE:
-                        update_search_crawl_page(job_id, -1) # Đánh dấu -1 là QUÉT XONG
-                        break
-                    continue
-
-                # ===== HOÀN TẤT TOÀN BỘ TRANG TÌM KIẾM =====
-                if "_search_done" in item:
-                    update_search_crawl_page(job_id, -1) # Đánh dấu -1 là QUÉT XONG
-                    break
-
-                # ===== DỪNG / TIMEOUT =====
-                if self.stop_requested:
-                    update_job_status(job_id, "PAUSED")
-                    raise CaptchaError("Manual stop")
-
-                if (datetime.now() - start_time).total_seconds() / 60 > MAX_JOB_DURATION_MIN:
-                    update_job_status(job_id, "PAUSED")
-                    return
-
-                # ===== LƯU SẢN PHẨM & CHIA LÔ =====
-                product_id = extract_product_id(item["url"])
-                if not product_id:
-                    continue
-
-                save_product(item, product_id, brand_id, category_id)
-                sold = item.get("sold", 0)
+        # =========================================================
+        # 🛡️ LƯỚI AN TOÀN BAO TRÙM TOÀN BỘ LOGIC BÊN TRONG
+        # =========================================================
+        try:
+            # ==========================================
+            # GIAI ĐOẠN 1: TÌM KIẾM SẢN PHẨM & CHIA LÔ
+            # ==========================================
+            if search_start_page != -1:
+                print(f"\n[CrawlWorker] 🔍 BẮT ĐẦU QUÉT SẢN PHẨM ({brand}) TỪ TRANG {search_start_page}...")
                 
-                # Hàm này sẽ xắt sản phẩm thành các lô 35 trang
-                get_or_create_deep_batches(product_id, sold)
+                for item in searcher.search_and_collect_forever(brand, category):
+                    if "_page_done" in item:
+                        page_idx = item["page_index"]
 
+                        if item.get("items_found", 0) == 0:
+                            search_soft_block_count += 1
+                        else:
+                            search_soft_block_count = 0
 
-        # ==========================================
-        # GIAI ĐOẠN 2: THÁC NƯỚC CÀO REVIEW (ROUND-ROBIN)
-        # ==========================================
-        print(f"\n[CrawlWorker] 🎯 BẮT ĐẦU CÀO THEO LÔ CHO THƯƠNG HIỆU: {brand}...")
-        soft_block_count = 0
+                        if search_soft_block_count >= 5:
+                            update_job_status(job_id, "PAUSED")
+                            raise CaptchaError("Search captcha detected")
 
-        while True:
-            # Kiểm tra thời gian và lệnh dừng an toàn
-            if self.stop_requested:
-                update_job_status(job_id, "PAUSED")
-                raise CaptchaError("Manual stop")
+                        update_search_crawl_page(job_id, page_idx + 1)
 
-            if (datetime.now() - start_time).total_seconds() / 60 > MAX_JOB_DURATION_MIN:
-                update_job_status(job_id, "PAUSED")
-                return
+                        if page_idx + 1 >= MAX_SEARCH_PAGE:
+                            update_search_crawl_page(job_id, -1) 
+                            break
+                        continue
 
-            # Bốc Lô PENDING tiếp theo (Tự động nhảy cóc giữa các sản phẩm)
-            batch = get_next_round_robin_batch(brand_id, category_id)
-            
-            if not batch:
-                # KHI KHÔNG CÒN LÔ NÀO PENDING -> JOB HOÀN THÀNH 100%
-                update_job_status(job_id, "COMPLETED")
-                reset_search_crawl(job_id) # Dọn dẹp trạng thái
-                print(f"[CrawlWorker] 🎉 XONG! Toàn bộ đánh giá của {brand} đã được vét sạch!")
-                return
+                    if "_search_done" in item:
+                        update_search_crawl_page(job_id, -1) 
+                        break
 
-            # Đánh dấu Lô này đang chạy
-            mark_deep_batch_running(batch["DeepCrawlId"])
-            print(f"\n[CrawlWorker] 🔄 Hiện tại đang ở Lô thứ {batch['BatchIndex']} của sản phẩm: {batch['ProductUrl']}")
-            print(f"                (Tiến hành cào từ trang {batch['PageStart']} đến {batch['PageEnd']})")
+                    if self.stop_requested:
+                        update_job_status(job_id, "PAUSED")
+                        raise CaptchaError("Manual stop")
 
-            # Gọi Fetcher cào (Đã tích hợp Fast-Forward)
-            result = reviewer.crawl_batch(
-                product_url=batch["ProductUrl"],
-                page_start=batch["PageStart"],
-                page_end=batch["PageEnd"]
-            )
+                    if (datetime.now() - start_time).total_seconds() / 60 > MAX_JOB_DURATION_MIN:
+                        update_job_status(job_id, "PAUSED")
+                        return
 
-            reviews = result.get("reviews", [])
-            is_exhausted = result.get("is_exhausted", False)
+                    product_id = extract_product_id(item["url"])
+                    if not product_id:
+                        continue
 
-            # Cơ chế chống Captcha
-            if not reviews:
-                soft_block_count += 1
-            else:
+                    save_product(item, product_id, brand_id, category_id)
+                    sold = item.get("sold", 0)
+                    
+                    get_or_create_deep_batches(product_id, sold)
+
+                # ==========================================
+                # GIAI ĐOẠN 2 (TIẾP NỐI): CÀO REVIEW THEO LÔ
+                # ==========================================
+                print(f"\n[CrawlWorker] 🎯 BẮT ĐẦU CÀO THEO LÔ CHO THƯƠNG HIỆU: {brand}...")
                 soft_block_count = 0
 
-            if soft_block_count >= 5:
-                update_job_status(job_id, "PAUSED")
-                # Lô bị hỏng, reset về PENDING để lần sau cào lại
-                reset_stuck_batches(brand_id, category_id)
-                raise CaptchaError("Review captcha detected")
+                while True:
+                    if self.stop_requested:
+                        update_job_status(job_id, "PAUSED")
+                        raise CaptchaError("Manual stop")
 
-            # Lưu vào Database
-            if reviews:
-                save_reviews(reviews, batch["ProductId"])
+                    if (datetime.now() - start_time).total_seconds() / 60 > MAX_JOB_DURATION_MIN:
+                        update_job_status(job_id, "PAUSED")
+                        return
 
-            # Cập nhật hoàn thành cho Lô
-            mark_deep_batch_done(
-                batch_id=batch["DeepCrawlId"],
-                reviews_collected=len(reviews),
-                latest_review_time=result.get("latest_review_time")
-            )
+                    batch = get_next_round_robin_batch(brand_id, category_id)
+                    
+                    if not batch:
+                        update_job_status(job_id, "COMPLETED")
+                        reset_search_crawl(job_id) 
+                        print(f"[CrawlWorker] 🎉 XONG! Toàn bộ đánh giá của {brand} đã được vét sạch!")
+                        return
 
-            # 🚀 NẾU ĐÃ CẠN KIỆT TRANG (HẾT REVIEW) -> HỦY CÁC LÔ CÒN LẠI CỦA SẢN PHẨM NÀY
-            if is_exhausted:
-                print(f"[CrawlWorker] 🛑 Sản phẩm này đã hết đánh giá. Tiến hành hủy các Lô thừa...")
-                from crawler.db.repositories import cancel_remaining_batches
-                cancel_remaining_batches(batch["ProductId"])
+                    mark_deep_batch_running(batch["DeepCrawlId"])
+                    print(f"\n[CrawlWorker] 🔄 Hiện tại đang ở Lô thứ {batch['BatchIndex']} của sản phẩm: {batch['ProductUrl']}")
+                    print(f"                (Tiến hành cào từ trang {batch['PageStart']} đến {batch['PageEnd']})")
 
-            # Nghỉ ngơi giữa các Lô để lách luật Shopee
-            time.sleep(uniform(*DELAY_BETWEEN_PRODUCT))
+                    result = reviewer.crawl_batch(
+                        product_url=batch["ProductUrl"],
+                        page_start=batch["PageStart"],
+                        page_end=batch["PageEnd"]
+                    )
+
+                    reviews = result.get("reviews", [])
+                    is_exhausted = result.get("is_exhausted", False)
+
+                    if not reviews:
+                        soft_block_count += 1
+                    else:
+                        soft_block_count = 0
+
+                    if soft_block_count >= 5:
+                        update_job_status(job_id, "PAUSED")
+                        reset_stuck_batches(brand_id, category_id)
+                        raise CaptchaError("Review captcha detected")
+
+                    if reviews:
+                        save_reviews(reviews, batch["ProductId"])
+
+                    mark_deep_batch_done(
+                        batch_id=batch["DeepCrawlId"],
+                        reviews_collected=len(reviews),
+                        latest_review_time=result.get("latest_review_time")
+                    )
+
+                    if is_exhausted:
+                        print(f"[CrawlWorker] 🛑 Sản phẩm này đã hết đánh giá. Tiến hành hủy các Lô thừa...")
+                        from crawler.db.repositories import cancel_remaining_batches
+                        cancel_remaining_batches(batch["ProductId"])
+
+                    time.sleep(uniform(*DELAY_BETWEEN_PRODUCT))
+
+            # ==========================================
+            # NHÁNH RESUME: NHẢY THẲNG VÀO CÀO REVIEW
+            # ==========================================
+            else:
+                print(f"\n[CrawlWorker] ⏩ Job {job_id} đã quét SP xong từ trước. Nhảy thẳng vào cào review...")
+                
+                soft_block_count = 0
+
+                while True:
+                    if self.stop_requested:
+                        update_job_status(job_id, "PAUSED")
+                        raise CaptchaError("Manual stop")
+
+                    if (datetime.now() - start_time).total_seconds() / 60 > MAX_JOB_DURATION_MIN:
+                        update_job_status(job_id, "PAUSED")
+                        return
+
+                    batch = get_next_round_robin_batch(brand_id, category_id)
+
+                    if not batch:
+                        update_job_status(job_id, "COMPLETED")
+                        reset_search_crawl(job_id)
+                        print(f"[CrawlWorker] 🎉 XONG! Toàn bộ đánh giá của {brand} đã được vét sạch!")
+                        return
+
+                    mark_deep_batch_running(batch["DeepCrawlId"])
+
+                    result = reviewer.crawl_batch(
+                        product_url=batch["ProductUrl"],
+                        page_start=batch["PageStart"],
+                        page_end=batch["PageEnd"]
+                    )
+
+                    reviews = result.get("reviews", [])
+                    is_exhausted = result.get("is_exhausted", False)
+
+                    if not reviews:
+                        soft_block_count += 1
+                    else:
+                        soft_block_count = 0
+
+                    if soft_block_count >= 5:
+                        update_job_status(job_id, "PAUSED")
+                        reset_stuck_batches(brand_id, category_id)
+                        raise CaptchaError("Review captcha detected")
+
+                    if reviews:
+                        save_reviews(reviews, batch["ProductId"])
+
+                    mark_deep_batch_done(
+                        batch_id=batch["DeepCrawlId"],
+                        reviews_collected=len(reviews),
+                        latest_review_time=result.get("latest_review_time")
+                    )
+
+                    if is_exhausted:
+                        from crawler.db.repositories import cancel_remaining_batches
+                        cancel_remaining_batches(batch["ProductId"])
+
+                    time.sleep(uniform(*DELAY_BETWEEN_PRODUCT))
+
+        # =========================================================
+        # 🚨 BẮT TẤT CẢ LỖI DÙ ĐANG Ở BẤT KỲ GIAI ĐOẠN NÀO
+        # =========================================================
+        except CaptchaError:
+            raise
+            
+        except Exception as e:
+            error_msg = str(e).lower()
+            
+            if "closed" in error_msg or "target page" in error_msg:
+                print(f"\n🛑 [CrawlWorker] TRÌNH DUYỆT BỊ ĐÓNG ĐỘT NGỘT (Có thể do tắt ngang)!")
+                print(f"  -> Đang tự động PAUSE Job {job_id} và Giải cứu các Lô bị kẹt để bảo toàn dữ liệu...")
+            else:
+                print(f"\n❌ [CrawlWorker] VĂNG LỖI BẤT NGỜ: {e}")
+                print(f"  -> Đang tự động PAUSE Job {job_id} để chờ kiểm tra...")
+
+            update_job_status(job_id, "PAUSED")
+            reset_stuck_batches(brand_id, category_id)
+        
