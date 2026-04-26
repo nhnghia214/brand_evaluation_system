@@ -202,6 +202,9 @@
 import time
 from datetime import datetime
 
+# THÊM DÒNG NÀY ĐỂ GỌI HÀM CHECK CAPTCHA (Nhớ sửa lại đường dẫn import cho đúng thư mục của bạn)
+from captcha_solver import check_and_solve_captcha 
+
 class ReviewFetcher:
     def __init__(self, page):
         self.page = page
@@ -264,6 +267,15 @@ class ReviewFetcher:
             print(f"[ReviewFetcher] Mở Tab: {product_url}")
             product_page.goto(product_url, wait_until="domcontentloaded")
             time.sleep(5)
+
+            # ==================================================
+            # 🛑 TRẠM CHECK CAPTCHA SỐ 1 (Khi vừa load trang)
+            # ==================================================
+            if not check_and_solve_captcha(product_page):
+                print("[ReviewFetcher] ❌ Giải Captcha thất bại. Đóng Tab bảo toàn mạng sống.")
+                product_page.close()
+                return {"reviews": [], "latest_review_time": None, "is_exhausted": False}
+
             self._scroll_like_human(product_page, rounds=5)
 
             current_page = 1
@@ -274,6 +286,12 @@ class ReviewFetcher:
             if page_start > 1:
                 print(f"[ReviewFetcher] ⏩ Đang tua nhanh tới trang {page_start}...")
                 while current_page < page_start:
+                    
+                    # 🛑 TRẠM CHECK CAPTCHA SỐ 2 (Bảo vệ lúc tua nhanh)
+                    if not check_and_solve_captcha(product_page):
+                        print("❌ Gục ngã khi đang tua nhanh. Dừng vòng lặp.")
+                        break 
+
                     clicked = self._click_next_review_page(product_page, wait_time=0.5)
                     if not clicked: break
                     current_page += 1
@@ -288,8 +306,15 @@ class ReviewFetcher:
             # ==================================================
             last_count = 0
             idle_round = 0
+            is_exhausted = False # Biến cờ báo hiệu hết bình luận
 
             while current_page <= page_end:
+                
+                # 🛑 TRẠM CHECK CAPTCHA SỐ 3 (Bảo vệ lúc cào chậm)
+                if not check_and_solve_captcha(product_page):
+                    print("❌ Gục ngã khi đang cào. Dừng vòng lặp.")
+                    break
+
                 if time.time() - activity["last"] > max_idle_seconds:
                     idle_round += 1
                 else:
@@ -302,7 +327,12 @@ class ReviewFetcher:
 
                 if len(reviews) == last_count:
                     clicked = self._click_next_review_page(product_page, wait_time=5)
-                    if not clicked: break
+                    if not clicked: 
+                        # 🛑 NÚT NEXT BỊ MỜ -> BÁO CÁO CẠN KIỆT SẢN PHẨM NÀY
+                        print("[ReviewFetcher] 🛑 Nút Next đã mờ. Sản phẩm này ĐÃ HẾT SẠCH bình luận!")
+                        is_exhausted = True
+                        break
+                    
                     current_page += 1
                     last_count = len(reviews)
                     continue
@@ -313,9 +343,12 @@ class ReviewFetcher:
             latest_time = max((r["review_time"] for r in result if r["review_time"]), default=None)
 
             print(f"[ReviewFetcher] ✅ Hoàn tất Lô (Pages {page_start}-{page_end}). Thu được: {len(result)} đánh giá.")
+            
+            # TRẢ VỀ CỜ IS_EXHAUSTED ĐỂ FILE SCHEDULER.PY ĐỌC
             return {
                 "reviews": result,
-                "latest_review_time": latest_time
+                "latest_review_time": latest_time,
+                "is_exhausted": is_exhausted 
             }
 
         finally:

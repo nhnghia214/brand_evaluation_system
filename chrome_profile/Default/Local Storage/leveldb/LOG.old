@@ -1,0 +1,27 @@
+2026/04/26-09:58:44.813 364c Reusing MANIFEST D:\Nam4\LuanVanTotNghiep\brand_evaluation_system\chrome_profile\Default\Local Storage\leveldb/MANIFEST-000001
+2026/04/26-09:58:44.817 364c Recovering log #3472
+2026/04/26-09:58:44.817 364c Reusing old log D:\Nam4\LuanVanTotNghiep\brand_evaluation_system\chrome_profile\Default\Local Storage\leveldb/003472.log 
+2026/04/26-09:59:44.834 40dc Level-0 table #3476: started
+2026/04/26-09:59:44.838 40dc Level-0 table #3476: 24978 bytes OK
+2026/04/26-09:59:44.840 40dc Delete type=0 #3472
+2026/04/26-10:00:46.359 40dc Level-0 table #3478: started
+2026/04/26-10:00:46.363 40dc Level-0 table #3478: 35005 bytes OK
+2026/04/26-10:00:46.363 40dc Delete type=0 #3475
+2026/04/26-10:01:46.352 40dc Level-0 table #3480: started
+2026/04/26-10:01:46.356 40dc Level-0 table #3480: 16468 bytes OK
+2026/04/26-10:01:46.358 40dc Delete type=0 #3477
+2026/04/26-10:02:46.357 40dc Level-0 table #3482: started
+2026/04/26-10:02:46.360 40dc Level-0 table #3482: 16468 bytes OK
+2026/04/26-10:02:46.362 40dc Delete type=0 #3479
+2026/04/26-10:02:46.362 40dc Compacting 4@0 + 1@1 files
+2026/04/26-10:02:46.368 40dc Generated table #3483@0: 2123 keys, 208293 bytes
+2026/04/26-10:02:46.368 40dc Compacted 4@0 + 1@1 files => 208293 bytes
+2026/04/26-10:02:46.369 40dc compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/04/26-10:02:46.369 40dc Delete type=2 #3473
+2026/04/26-10:02:46.369 40dc Delete type=2 #3476
+2026/04/26-10:02:46.369 40dc Delete type=2 #3478
+2026/04/26-10:02:46.369 40dc Delete type=2 #3480
+2026/04/26-10:02:46.369 40dc Delete type=2 #3482
+2026/04/26-10:03:46.362 40dc Level-0 table #3485: started
+2026/04/26-10:03:46.365 40dc Level-0 table #3485: 16468 bytes OK
+2026/04/26-10:03:46.366 40dc Delete type=0 #3481

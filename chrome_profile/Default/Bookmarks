@@ -1,0 +1,47 @@
+{
+   "checksum": "d1a356182f89069780ce456453a9661c",
+   "roots": {
+      "bookmark_bar": {
+         "children": [  ],
+         "date_added": "13418363143219428",
+         "date_last_used": "0",
+         "date_modified": "0",
+         "guid": "0bc5d13f-2cba-5d74-951f-3f233fe6c908",
+         "id": "1",
+         "name": "Bookmarks bar",
+         "type": "folder"
+      },
+      "other": {
+         "children": [ {
+            "date_added": "13418363159353788",
+            "date_last_used": "0",
+            "guid": "1602758a-e263-4509-95d8-e67d3c40bf69",
+            "id": "5",
+            "meta_info": {
+               "power_bookmark_meta": ""
+            },
+            "name": "Shopee Việt Nam | Mua Sắm Online",
+            "type": "url",
+            "url": "https://shopee.vn/"
+         } ],
+         "date_added": "13418363143219428",
+         "date_last_used": "0",
+         "date_modified": "13418363159353788",
+         "guid": "82b081ec-3dd3-529c-8475-ab6c344590dd",
+         "id": "2",
+         "name": "Other bookmarks",
+         "type": "folder"
+      },
+      "synced": {
+         "children": [  ],
+         "date_added": "13418363143219428",
+         "date_last_used": "0",
+         "date_modified": "0",
+         "guid": "4cf2e351-0e85-532b-bb37-df045d8f8d0f",
+         "id": "3",
+         "name": "Mobile bookmarks",
+         "type": "folder"
+      }
+   },
+   "version": 1
+}

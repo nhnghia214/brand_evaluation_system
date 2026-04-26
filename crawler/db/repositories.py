@@ -937,7 +937,7 @@ def get_next_round_robin_batch(brand_id, category_id):
         "PageEnd": row[4],
         "LastReviewTime": row[5],
         "ProductUrl": row[6]
-    }    
+    }   
 
 
 def get_next_pending_batch(product_id):
@@ -1008,3 +1008,27 @@ def mark_deep_batch_done(batch_id, reviews_collected, latest_review_time):
 
     conn.commit()
     conn.close()
+
+
+def cancel_remaining_batches(product_id):
+    """
+    Hủy tất cả các lô đang chờ (PENDING) của một sản phẩm
+    khi phát hiện sản phẩm đó đã cạn kiệt đánh giá sớm hơn dự kiến.
+    """
+    product_id = str(product_id)
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("""
+            UPDATE DeepCrawlState
+            SET BatchStatus = 'CANCELED',
+                UpdatedAt = GETDATE()
+            WHERE ProductId = ? AND BatchStatus = 'PENDING'
+        """, product_id)
+        
+        conn.commit()
+    except Exception as e:
+        print(f"[DB Error] Lỗi khi hủy các lô thừa của sản phẩm {product_id}: {e}")
+    finally:
+        conn.close()
