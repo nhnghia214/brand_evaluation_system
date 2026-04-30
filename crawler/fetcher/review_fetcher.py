@@ -253,7 +253,7 @@ class ReviewFetcher:
         except:
             return False
 
-    def crawl_batch(self, product_url, page_start, page_end, max_idle_seconds=25):
+    def crawl_batch(self, product_url, page_start, page_end, max_idle_seconds=25, job_id=None):
         """
         API MỚI DÀNH RIÊNG CHO DEEP CRAWL THEO LÔ (ROUND-ROBIN)
         """
@@ -269,9 +269,10 @@ class ReviewFetcher:
             time.sleep(5)
 
             # ==================================================
-            # 🛑 TRẠM CHECK CAPTCHA SỐ 1 (Khi vừa load trang)
+            # 🛑 TRẠM CHECK CAPTCHA SỐ 1
             # ==================================================
-            if not check_and_solve_captcha(product_page):
+            # 2. Truyền job_id vào hàm
+            if not check_and_solve_captcha(product_page, job_id=job_id):
                 print("[ReviewFetcher] ❌ Giải Captcha thất bại. Đóng Tab bảo toàn mạng sống.")
                 product_page.close()
                 return {"reviews": [], "latest_review_time": None, "is_exhausted": False}
@@ -288,7 +289,7 @@ class ReviewFetcher:
                 while current_page < page_start:
                     
                     # 🛑 TRẠM CHECK CAPTCHA SỐ 2 (Bảo vệ lúc tua nhanh)
-                    if not check_and_solve_captcha(product_page):
+                    if not check_and_solve_captcha(product_page, job_id=job_id):
                         print("❌ Gục ngã khi đang tua nhanh. Dừng vòng lặp.")
                         break 
 
@@ -311,7 +312,7 @@ class ReviewFetcher:
             while current_page <= page_end:
                 
                 # 🛑 TRẠM CHECK CAPTCHA SỐ 3 (Bảo vệ lúc cào chậm)
-                if not check_and_solve_captcha(product_page):
+                if not check_and_solve_captcha(product_page, job_id=job_id):
                     print("❌ Gục ngã khi đang cào. Dừng vòng lặp.")
                     break
 

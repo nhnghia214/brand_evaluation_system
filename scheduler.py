@@ -23,7 +23,7 @@
 #     update_search_crawl_page,
 #     reset_search_crawl,
 
-#     # 🔥 DEEP CRAWL
+#     #  DEEP CRAWL
 #     get_or_create_deep_batches,
 #     get_next_pending_batch,
 #     mark_deep_batch_running,
@@ -229,7 +229,7 @@ from crawler.db.repositories import (
     update_search_crawl_page,
     reset_search_crawl,
 
-    # 🔥 DEEP CRAWL 
+    #  DEEP CRAWL 
     get_or_create_deep_batches,
     get_next_round_robin_batch, 
     mark_deep_batch_running,
@@ -274,7 +274,7 @@ class CrawlWorker:
         self.current_job_id = job_id
         update_job_status(job_id, "RUNNING")
 
-        # 🚀 Giải cứu các Lô bị kẹt ở lần chạy trước
+        #  Giải cứu các Lô bị kẹt ở lần chạy trước
         reset_stuck_batches(brand_id, category_id)
 
         search_start_page = get_search_crawl_state(job_id)
@@ -285,16 +285,16 @@ class CrawlWorker:
         search_soft_block_count = 0
 
         # =========================================================
-        # 🛡️ LƯỚI AN TOÀN BAO TRÙM TOÀN BỘ LOGIC BÊN TRONG
+        # ️ LƯỚI AN TOÀN BAO TRÙM TOÀN BỘ LOGIC BÊN TRONG
         # =========================================================
         try:
             # ==========================================
             # GIAI ĐOẠN 1: TÌM KIẾM SẢN PHẨM & CHIA LÔ
             # ==========================================
             if search_start_page != -1:
-                print(f"\n[CrawlWorker] 🔍 BẮT ĐẦU QUÉT SẢN PHẨM ({brand}) TỪ TRANG {search_start_page}...")
+                print(f"\n[CrawlWorker]  BẮT ĐẦU QUÉT SẢN PHẨM ({brand}) TỪ TRANG {search_start_page}...")
                 
-                for item in searcher.search_and_collect_forever(brand, category):
+                for item in searcher.search_and_collect_forever(brand, category, job_id=job_id):
                     if "_page_done" in item:
                         page_idx = item["page_index"]
 
@@ -338,7 +338,7 @@ class CrawlWorker:
                 # ==========================================
                 # GIAI ĐOẠN 2 (TIẾP NỐI): CÀO REVIEW THEO LÔ
                 # ==========================================
-                print(f"\n[CrawlWorker] 🎯 BẮT ĐẦU CÀO THEO LÔ CHO THƯƠNG HIỆU: {brand}...")
+                print(f"\n[CrawlWorker]  BẮT ĐẦU CÀO THEO LÔ CHO THƯƠNG HIỆU: {brand}...")
                 soft_block_count = 0
 
                 while True:
@@ -355,17 +355,18 @@ class CrawlWorker:
                     if not batch:
                         update_job_status(job_id, "COMPLETED")
                         reset_search_crawl(job_id) 
-                        print(f"[CrawlWorker] 🎉 XONG! Toàn bộ đánh giá của {brand} đã được vét sạch!")
+                        print(f"[CrawlWorker]  XONG! Toàn bộ đánh giá của {brand} đã được vét sạch!")
                         return
 
                     mark_deep_batch_running(batch["DeepCrawlId"])
-                    print(f"\n[CrawlWorker] 🔄 Hiện tại đang ở Lô thứ {batch['BatchIndex']} của sản phẩm: {batch['ProductUrl']}")
+                    print(f"\n[CrawlWorker]  Hiện tại đang ở Lô thứ {batch['BatchIndex']} của sản phẩm: {batch['ProductUrl']}")
                     print(f"                (Tiến hành cào từ trang {batch['PageStart']} đến {batch['PageEnd']})")
 
                     result = reviewer.crawl_batch(
                         product_url=batch["ProductUrl"],
                         page_start=batch["PageStart"],
-                        page_end=batch["PageEnd"]
+                        page_end=batch["PageEnd"],
+                        job_id=job_id
                     )
 
                     reviews = result.get("reviews", [])
@@ -391,7 +392,7 @@ class CrawlWorker:
                     )
 
                     if is_exhausted:
-                        print(f"[CrawlWorker] 🛑 Sản phẩm này đã hết đánh giá. Tiến hành hủy các Lô thừa...")
+                        print(f"[CrawlWorker]  Sản phẩm này đã hết đánh giá. Tiến hành hủy các Lô thừa...")
                         from crawler.db.repositories import cancel_remaining_batches
                         cancel_remaining_batches(batch["ProductId"])
 
@@ -419,7 +420,7 @@ class CrawlWorker:
                     if not batch:
                         update_job_status(job_id, "COMPLETED")
                         reset_search_crawl(job_id)
-                        print(f"[CrawlWorker] 🎉 XONG! Toàn bộ đánh giá của {brand} đã được vét sạch!")
+                        print(f"[CrawlWorker]  XONG! Toàn bộ đánh giá của {brand} đã được vét sạch!")
                         return
 
                     mark_deep_batch_running(batch["DeepCrawlId"])
@@ -427,7 +428,8 @@ class CrawlWorker:
                     result = reviewer.crawl_batch(
                         product_url=batch["ProductUrl"],
                         page_start=batch["PageStart"],
-                        page_end=batch["PageEnd"]
+                        page_end=batch["PageEnd"],
+                        job_id=job_id
                     )
 
                     reviews = result.get("reviews", [])
@@ -459,7 +461,7 @@ class CrawlWorker:
                     time.sleep(uniform(*DELAY_BETWEEN_PRODUCT))
 
         # =========================================================
-        # 🚨 BẮT TẤT CẢ LỖI DÙ ĐANG Ở BẤT KỲ GIAI ĐOẠN NÀO
+        #  BẮT TẤT CẢ LỖI DÙ ĐANG Ở BẤT KỲ GIAI ĐOẠN NÀO
         # =========================================================
         except CaptchaError:
             raise
@@ -468,7 +470,7 @@ class CrawlWorker:
             error_msg = str(e).lower()
             
             if "closed" in error_msg or "target page" in error_msg:
-                print(f"\n🛑 [CrawlWorker] TRÌNH DUYỆT BỊ ĐÓNG ĐỘT NGỘT (Có thể do tắt ngang)!")
+                print(f"\n [CrawlWorker] TRÌNH DUYỆT BỊ ĐÓNG ĐỘT NGỘT (Có thể do tắt ngang)!")
                 print(f"  -> Đang tự động PAUSE Job {job_id} và Giải cứu các Lô bị kẹt để bảo toàn dữ liệu...")
             else:
                 print(f"\n❌ [CrawlWorker] VĂNG LỖI BẤT NGỜ: {e}")

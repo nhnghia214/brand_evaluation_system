@@ -1,0 +1,10 @@
+2026/04/29-22:30:11.205 42bc Reusing MANIFEST D:\Nam4\LuanVanTotNghiep\brand_evaluation_system\chrome_profile\Default\Local Storage\leveldb/MANIFEST-000001
+2026/04/29-22:30:11.209 42bc Recovering log #3
+2026/04/29-22:30:11.210 42bc Level-0 table #3: started
+2026/04/29-22:30:11.211 42bc Level-0 table #3: 25868 bytes OK
+2026/04/29-22:30:11.212 42bc Recovering log #4
+2026/04/29-22:30:11.217 42bc Level-0 table #4: started
+2026/04/29-22:30:11.220 42bc Level-0 table #4: 41575 bytes OK
+2026/04/29-22:30:11.222 42bc Delete type=0 #3
+2026/04/29-22:30:11.222 42bc Delete type=0 #4
+2026/04/29-22:30:11.222 42bc Delete type=2 #5

@@ -1012,7 +1012,7 @@ def mark_deep_batch_done(batch_id, reviews_collected, latest_review_time):
 
 def cancel_remaining_batches(product_id):
     """
-    Hủy tất cả các lô đang chờ (PENDING) của một sản phẩm
+    Đánh dấu tất cả các lô đang chờ (PENDING) của một sản phẩm là DONE
     khi phát hiện sản phẩm đó đã cạn kiệt đánh giá sớm hơn dự kiến.
     """
     product_id = str(product_id)
@@ -1022,7 +1022,7 @@ def cancel_remaining_batches(product_id):
     try:
         cursor.execute("""
             UPDATE DeepCrawlState
-            SET BatchStatus = 'CANCELED',
+            SET BatchStatus = 'DONE',
                 UpdatedAt = GETDATE()
             WHERE ProductId = ? AND BatchStatus = 'PENDING'
         """, product_id)

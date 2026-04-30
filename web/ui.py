@@ -3,25 +3,22 @@
 import os
 import uuid
 from dotenv import load_dotenv
-
 import json
 from openai import AsyncOpenAI
-
 from authlib.integrations.starlette_client import OAuth
 from starlette.config import Config
-
-from fastapi import APIRouter, Request, Form, Depends, HTTPException, status
+from fastapi import APIRouter, Request, Form, Depends, HTTPException, status, BackgroundTasks
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 import jwt
 from datetime import datetime, timedelta
 
+import resend # Thư viện gửi mail lách luật DigitalOcean qua cổng 443
+
 from agent.intent_parser import IntentParser
 from crawler.db.db_connection import get_connection
-
 from core.layer_c.brand_narrator import narrate_brand_evaluation
 from core.layer_c_plus.llm_comparator import compare_brands_with_llm
-
 from core.layer_a.brand_category_registrar import BrandCategoryRegistrar
 from core.layer_a.crawl_job_orchestrator import CrawlJobOrchestrator
 from core.layer_a.brand_category_resolver import BrandCategoryResolver
@@ -34,6 +31,7 @@ from web.schemas import AnalysisFormRequest
 import time
 from payos import PayOS
 from payos.type import ItemData, PaymentData
+from pydantic import BaseModel
 
 
 # Load các biến môi trường từ file .env
@@ -514,10 +512,38 @@ def admin_dashboard(request: Request, tab: str = "overview"):
             context["rev_data"] = [int(r.DailyTotal) for r in chart_raw]
 
             # 3. Phân bổ theo gói dịch vụ (Pie Chart)
+            # Khởi tạo mặc định 4 gói chuẩn để luôn xuất hiện trên biểu đồ (kể cả khi số lượng = 0)
+            stats_dict = {
+                "Gói VIP": 0,
+                "50 Token": 0,
+                "120 Token": 0,
+                "280 Token": 0
+            }
+            
             cursor.execute("""
                 SELECT Goi_DichVu, COUNT(*) as Qty FROM DonHang 
                 WHERE TrangThai = 'SUCCESS' GROUP BY Goi_DichVu
             """)
+            
+            for r in cursor.fetchall():
+                code = str(r.Goi_DichVu).upper()
+                if "TOKEN_50" in code:
+                    stats_dict["50 Token"] += r.Qty
+                elif "TOKEN_120" in code:
+                    stats_dict["120 Token"] += r.Qty
+                elif "TOKEN_280" in code:
+                    stats_dict["280 Token"] += r.Qty
+                elif "VIP" in code:
+                    stats_dict["Gói VIP"] += r.Qty
+                elif "BASIC" in code:
+                    # Gom các đơn BASIC cũ trong quá trình test
+                    stats_dict["Cơ bản (Cũ)"] = stats_dict.get("Cơ bản (Cũ)", 0) + r.Qty
+                else:
+                    stats_dict[code] = stats_dict.get(code, 0) + r.Qty
+
+            # Trả về List các Dictionary để Jinja2 / Chart.js parse sang JSON
+            context["package_stats"] = [{"Goi_DichVu": k, "Qty": v} for k, v in stats_dict.items()]
+            
             # Ép kiểu Row thành Dictionary để Jinja2 có thể parse sang JSON
             context["package_stats"] = [{"Goi_DichVu": r.Goi_DichVu, "Qty": r.Qty} for r in cursor.fetchall()]
 
@@ -1246,7 +1272,6 @@ def create_payment_link(req: CheckoutRequest, request: Request):
     item = ItemData(name=plan_name, quantity=1, price=amount)
     
     # THỰC TẾ: domain phải là domain thật (hoặc ngrok) để PayOS redirect về. 
-    # Tạm thời dùng localhost cho luồng test.
     domain = "http://127.0.0.1:8000" 
     
     payment_data = PaymentData(
