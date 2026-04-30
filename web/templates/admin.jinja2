@@ -672,25 +672,41 @@
     });
 
     // 2. Biểu đồ Tròn (Tỷ lệ Gói dịch vụ)
-    // Tái cấu trúc dữ liệu Python sang mảng JS
-    const packageStats = {{ package_stats | default([]) | tojson }};
+    const packageStats = {{ package_stats | default([]) | tojson | safe }};
     const pieLabels = packageStats.map(item => item.Goi_DichVu);
-    const pieData = packageStats.map(item => item.Qty);
+    let pieData = packageStats.map(item => item.Qty);
+    
+    // Xử lý chống tàng hình: Tính tổng số đơn. Nếu = 0 thì cho hiển thị vòng xám
+    const totalSum = pieData.reduce((a, b) => a + b, 0);
+    let bgColors = ['#8B5CF6', '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#6B7280'];
+    
+    if (totalSum === 0) {
+        pieData = [1]; // Tạo 1 data ảo để vẽ vòng tròn 100%
+        bgColors = ['#374151']; // Màu xám tối
+    }
     
     new Chart(document.getElementById('packageChart'), {
         type: 'doughnut',
         data: {
-            labels: pieLabels,
+            labels: totalSum === 0 ? ['Chưa có đơn hàng nào'] : pieLabels,
             datasets: [{
                 data: pieData,
-                backgroundColor: ['#8B5CF6', '#3B82F6', '#10B981', '#F59E0B', '#EF4444'],
+                backgroundColor: bgColors,
                 borderWidth: 0
             }]
         },
         options: {
             responsive: true, maintainAspectRatio: false,
             plugins: {
-                legend: { position: 'bottom', labels: { color: '#D1D5DB', padding: 15 } }
+                legend: { position: 'bottom', labels: { color: '#D1D5DB', padding: 15 } },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            if (totalSum === 0) return ' 0 đơn';
+                            return ' ' + context.formattedValue + ' đơn';
+                        }
+                    }
+                }
             },
             cutout: '65%'
         }
